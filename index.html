@@ -1,97 +1,150 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#6366f1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Учет продукции</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Учет продукции</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <!-- iOS: отдельная иконка (рекомендован минимум 180×180). 
-       Временная ссылка на 192×192, можно позже заменить отдельным 180×180 -->
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/android-launchericon-192-192.png" />
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/android-launchericon-192-192.png">
+    <link rel="icon" href="icons/android-launchericon-192-192.png" type="image/png">
 
-  <!-- Favicon для десктопов (можно заменить на свой svg/ico) -->
-  <link rel="icon" href="icons/android-launchericon-192-192.png" type="image/png" />
-
-  <link rel="stylesheet" href="css/style.css" />
+    <!-- Стили -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
 </head>
-<body>
-  <div class="app-container">
-    <!-- Заголовок с навигацией -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">📦 Учет продукции</h1>
-        <button class="settings-btn" onclick="window.location.href='settings.html'">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.4l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
-      </div>
-    </header>
+<body data-theme="light">
+    <div class="app-container">
+        <!-- Заголовок с навигацией -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">📦 Учет продукции</h1>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="header-btn" title="Переключить тему">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                        </svg>
+                    </button>
+                    <button id="quick-export-btn" class="header-btn" title="Быстрый экспорт">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </button>
+                    <button class="settings-btn" onclick="window.location.href='settings.html'" title="Настройки">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.4l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-    <!-- Карточка месячной прибыли -->
-    <div class="stats-card">
-      <div class="stats-icon">💰</div>
-      <div class="stats-content">
-        <div class="stats-label">Заработано за месяц</div>
-        <div class="stats-amount" id="monthly-total">0 ₽</div>
-      </div>
-    </div>
-
-    <!-- Форма добавления записи -->
-    <div class="add-form-card">
-      <h2 class="card-title">📝 Новая запись</h2>
-
-      <div class="form-group">
-        <label class="form-label">Продукт</label>
-        <div class="select-wrapper">
-          <select id="product-select" class="form-select">
-            <option value="">Выберите продукт...</option>
-          </select>
-          <svg class="select-arrow" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-          </svg>
+        <!-- Карточка месячной прибыли -->
+        <div class="stats-card">
+            <div class="stats-icon">💰</div>
+            <div class="stats-content">
+                <div class="stats-label">Заработано за месяц</div>
+                <div class="stats-amount" id="monthly-total">0 ₽</div>
+            </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label class="form-label">Количество</label>
-        <input type="number" id="quantity-input" class="form-input" placeholder="Введите количество..." min="0" step="0.01" />
-      </div>
+        <!-- Форма добавления записи -->
+        <div class="add-form-card">
+            <h2 class="card-title">📝 Новая запись</h2>
+            
+            <div class="form-group">
+                <label class="form-label">Продукт</label>
+                <div class="select-wrapper">
+                    <!-- Поиск продуктов -->
+                    <div class="search-container">
+                        <input type="text" id="product-search" class="form-input" 
+                               placeholder="Поиск или выбор продукта..." autocomplete="off">
+                        <div id="search-results" class="search-results"></div>
+                    </div>
+                    <select id="product-select" class="form-select" style="display: none;">
+                        <option value="">Выберите продукт...</option>
+                    </select>
+                </div>
+            </div>
 
-      <div class="amount-preview">
-        <span class="amount-label">Сумма:</span>
-        <span id="current-amount" class="amount-value">0 ₽</span>
-      </div>
+            <div class="form-group">
+                <label class="form-label">Количество</label>
+                <input type="number" id="quantity-input" class="form-input" 
+                       placeholder="Введите количество..." min="0" step="0.01">
+                
+                <!-- Пресеты количества -->
+                <div class="quantity-presets" id="quantity-presets">
+                    <!-- Пресеты добавляются динамически -->
+                </div>
+            </div>
 
-      <button id="add-record-btn" class="btn btn-primary">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-        </svg>
-        Добавить запись
-      </button>
+            <div class="amount-preview">
+                <span class="amount-label">Сумма:</span>
+                <span id="current-amount" class="amount-value">0 ₽</span>
+            </div>
+
+            <button id="add-record-btn" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                </svg>
+                Добавить запись
+            </button>
+        </div>
+
+        <!-- История записей -->
+        <div class="records-card">
+            <div class="card-header">
+                <h2 class="card-title">📊 Записи за месяц</h2>
+                <div class="header-actions">
+                    <span id="records-count" class="records-count">0</span>
+                    <button id="export-csv-btn" class="btn btn-small btn-secondary" title="Экспорт в CSV">
+                        📊 CSV
+                    </button>
+                </div>
+            </div>
+            <div id="records-list" class="records-list"></div>
+        </div>
     </div>
 
-    <!-- История записей -->
-    <div class="records-card">
-      <div class="card-header">
-        <h2 class="card-title">📊 Записи за месяц</h2>
-        <span id="records-count" class="records-count">0</span>
-      </div>
-      <div id="records-list" class="records-list"></div>
+    <!-- Быстрый экспорт модал -->
+    <div id="quick-export-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Быстрый экспорт</h3>
+                <button class="close-btn" onclick="closeQuickExport()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <button class="btn btn-primary" onclick="exportToCSV()">
+                        📊 Скачать CSV
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportToEmail()">
+                        📧 Отправить на email
+                    </button>
+                    <button class="btn btn-secondary" onclick="shareReport()">
+                        📤 Поделиться
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Уведомления -->
-  <div id="toast" class="toast"></div>
+    <!-- Уведомления -->
+    <div id="toast" class="toast"></div>
 
-  <!-- Скрипты -->
-  <script src="js/storage.js"></script>
-  <script src="js/app.js"></script>
+    <!-- Скрипты -->
+    <script src="js/storage.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
