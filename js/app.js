@@ -1,9 +1,11 @@
 /**
- * Главное приложение для учета продукции
+ * Главное приложение для учета продукции (расширенная версия)
  */
 class ProductTracker {
     constructor() {
         this.isLoading = false;
+        this.selectedProduct = null;
+        this.currentPresets = [];
         this.init();
     }
 
@@ -14,51 +16,83 @@ class ProductTracker {
         this.bindEvents();
         this.loadProducts();
         this.loadRecords();
+        this.loadQuantityPresets();
         this.updateMonthlyTotal();
         this.addSampleDataIfEmpty();
         
-        console.log('ProductTracker инициализирован');
+        console.log('ProductTracker v3.0 инициализирован');
     }
 
     /**
      * Привязка событий
      */
     bindEvents() {
-        const productSelect = document.getElementById('product-select');
-        const quantityInput = document.getElementById('quantity-input');
+        // Основные события формы
         const addRecordBtn = document.getElementById('add-record-btn');
+        const quantityInput = document.getElementById('quantity-input');
+        const productSelect = document.getElementById('product-select');
 
-        // События формы
-        productSelect?.addEventListener('change', () => this.updateCurrentAmount());
-        quantityInput?.addEventListener('input', Utils.debounce(() => this.updateCurrentAmount(), 300));
-        addRecordBtn?.addEventListener('click', () => this.addRecord());
+        // События для совместимости с поиском
+        if (productSelect) {
+            productSelect.addEventListener('change', () => this.updateCurrentAmount());
+        }
+        
+        if (quantityInput) {
+            quantityInput.addEventListener('input', Utils.debounce(() => this.updateCurrentAmount(), 300));
+            quantityInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !this.isLoading) {
+                    this.addRecord();
+                }
+            });
+        }
 
-        // Быстрые клавиши
-        quantityInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !this.isLoading) {
-                this.addRecord();
-            }
-        });
+        if (addRecordBtn) {
+            addRecordBtn.addEventListener('click', () => this.addRecord());
+        }
 
-        // Предотвращение отправки формы
+        // События быстрого экспорта
+        this.bindQuickExportEvents();
+
+        // Предотвращение случайной отправки формы
         document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+            if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.id !== 'quantity-input') {
                 e.preventDefault();
             }
         });
     }
 
     /**
-     * Добавить образцы данных при первом запуске
+     * Привязка событий быстрого экспорта
+     */
+    bindQuickExportEvents() {
+        // Модальное окно быстрого экспорта уже обрабатывается в export.js
+        
+        // Экспорт CSV из списка записей
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        if (exportCsvBtn) {
+            exportCsvBtn.addEventListener('click', () => {
+                if (typeof ExportManager !== 'undefined') {
+                    const exportManager = new ExportManager();
+                    exportManager.exportToCSV();
+                } else {
+                    Utils.showToast('Модуль экспорта не загружен', 'error');
+                }
+            });
+        }
+    }
+
+    /**
+     * Добавление образцов данных при первом запуске
      */
     addSampleDataIfEmpty() {
         const products = Storage.getProducts();
         if (products.length === 0) {
             const sampleProducts = [
-                { name: 'Хлеб белый', price: 45 },
-                { name: 'Хлеб черный', price: 50 },
-                { name: 'Булочка с маком', price: 35 },
-                { name: 'Багет французский', price: 75 }
+                { name: 'Хлеб белый', price: 45, isFavorite: true },
+                { name: 'Хлеб черный', price: 50, isFavorite: true },
+                { name: 'Булочка с маком', price: 35, isFavorite: false },
+                { name: 'Багет французский', price: 75, isFavorite: false },
+                { name: 'Круассан', price: 60, isFavorite: false }
             ];
 
             sampleProducts.forEach(product => {
@@ -71,7 +105,7 @@ class ProductTracker {
     }
 
     /**
-     * Загрузить продукты в селект
+     * Загрузка продуктов для совместимости с поиском
      */
     loadProducts() {
         const products = Storage.getProducts();
@@ -79,10 +113,7 @@ class ProductTracker {
         
         if (!select) return;
 
-        // Сохранить текущий выбор
-        const currentValue = select.value;
-
-        // Очистить опции
+        // Очищаем опции
         select.innerHTML = '<option value="">Выберите продукт...</option>';
 
         if (products.length === 0) {
@@ -94,26 +125,92 @@ class ProductTracker {
             return;
         }
 
-        // Добавить продукты
-        products.forEach(product => {
+        // Сортируем: сначала избранные, потом по алфавиту
+        const favorites = products.filter(p => p.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
+        const regular = products.filter(p => !p.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
+        const sortedProducts = [...favorites, ...regular];
+
+        sortedProducts.forEach(product => {
             const option = document.createElement('option');
             option.value = product.id;
-            option.textContent = `${product.name} • ${Utils.formatCurrency(product.price)}`;
+            option.textContent = `${product.isFavorite ? '⭐ ' : ''}${product.name} • ${Utils.formatCurrency(product.price)}`;
             option.dataset.price = product.price;
             option.dataset.name = product.name;
             select.appendChild(option);
         });
 
-        // Восстановить выбор если возможно
-        if (currentValue && [...select.options].some(opt => opt.value === currentValue)) {
-            select.value = currentValue;
-        }
-
         this.updateCurrentAmount();
+
+        // Обновляем результаты поиска если они открыты
+        if (typeof searchManager !== 'undefined') {
+            searchManager.refreshResults();
+        }
     }
 
     /**
-     * Обновить текущую сумму
+     * Загрузка пресетов количества
+     */
+    loadQuantityPresets() {
+        this.currentPresets = Storage.getQuantityPresets();
+        this.renderQuantityPresets();
+    }
+
+    /**
+     * Отображение пресетов количества
+     */
+    renderQuantityPresets() {
+        const container = document.getElementById('quantity-presets');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (this.currentPresets.length === 0) {
+            return;
+        }
+
+        this.currentPresets.forEach(preset => {
+            const button = document.createElement('button');
+            button.className = 'preset-btn';
+            button.textContent = preset;
+            button.type = 'button';
+            
+            button.addEventListener('click', () => {
+                this.setQuantity(preset);
+            });
+
+            container.appendChild(button);
+        });
+    }
+
+    /**
+     * Установка количества из пресета
+     * @param {number} value Значение количества
+     */
+    setQuantity(value) {
+        const quantityInput = document.getElementById('quantity-input');
+        if (quantityInput) {
+            quantityInput.value = value;
+            this.updateCurrentAmount();
+            
+            // Визуальная обратная связь
+            const activeBtn = document.querySelector('.preset-btn.active');
+            if (activeBtn) {
+                activeBtn.classList.remove('active');
+            }
+            
+            const clickedBtn = Array.from(document.querySelectorAll('.preset-btn'))
+                .find(btn => parseFloat(btn.textContent) === value);
+            if (clickedBtn) {
+                clickedBtn.classList.add('active');
+                setTimeout(() => {
+                    clickedBtn.classList.remove('active');
+                }, 1000);
+            }
+        }
+    }
+
+    /**
+     * Обновление текущей суммы
      */
     updateCurrentAmount() {
         const select = document.getElementById('product-select');
@@ -122,11 +219,23 @@ class ProductTracker {
         
         if (!select || !quantityInput || !currentAmount) return;
 
-        const selectedOption = select.options[select.selectedIndex];
+        let selectedOption = null;
+        let price = 0;
+
+        // Проверяем, используется ли поиск
+        if (typeof searchManager !== 'undefined' && searchManager.getSelectedProduct()) {
+            const selectedProduct = searchManager.getSelectedProduct();
+            price = selectedProduct.price;
+        } else {
+            selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.dataset.price) {
+                price = parseFloat(selectedOption.dataset.price);
+            }
+        }
+
         const quantity = parseFloat(quantityInput.value) || 0;
 
-        if (selectedOption && selectedOption.dataset.price && quantity > 0) {
-            const price = parseFloat(selectedOption.dataset.price);
+        if (price > 0 && quantity > 0) {
             const amount = price * quantity;
             currentAmount.textContent = Utils.formatCurrency(amount);
             currentAmount.style.color = 'var(--success-color)';
@@ -137,7 +246,7 @@ class ProductTracker {
     }
 
     /**
-     * Добавить запись
+     * Добавление записи (обновленная версия)
      */
     async addRecord() {
         if (this.isLoading) return;
@@ -148,13 +257,37 @@ class ProductTracker {
 
         if (!select || !quantityInput || !addButton) return;
 
-        const selectedOption = select.options[select.selectedIndex];
+        let selectedProduct = null;
+        let productId = null;
+        let productName = '';
+        let price = 0;
+
+        // Определяем источник продукта (поиск или обычный select)
+        if (typeof searchManager !== 'undefined' && searchManager.getSelectedProduct()) {
+            selectedProduct = searchManager.getSelectedProduct();
+            productId = selectedProduct.id;
+            productName = selectedProduct.name;
+            price = selectedProduct.price;
+        } else {
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                productId = parseInt(selectedOption.value);
+                productName = selectedOption.dataset.name;
+                price = parseFloat(selectedOption.dataset.price);
+            }
+        }
+
         const quantity = quantityInput.value.trim();
 
         // Валидация
-        if (!selectedOption || !selectedOption.value) {
+        if (!productId) {
             Utils.showToast('Выберите продукт', 'error');
-            select.focus();
+            if (typeof searchManager !== 'undefined') {
+                const searchInput = document.getElementById('product-search');
+                if (searchInput) searchInput.focus();
+            } else {
+                select.focus();
+            }
             return;
         }
 
@@ -165,33 +298,49 @@ class ProductTracker {
             return;
         }
 
-        // Показать загрузку
+        // Показываем состояние загрузки
         this.setLoading(true, addButton);
 
         try {
-            // Создать запись
+            // Создаем запись
             const record = {
-                productId: parseInt(selectedOption.value),
-                productName: selectedOption.dataset.name,
+                productId: productId,
+                productName: productName,
                 quantity: parseFloat(quantity),
-                price: parseFloat(selectedOption.dataset.price),
-                amount: parseFloat(quantity) * parseFloat(selectedOption.dataset.price)
+                price: price,
+                amount: parseFloat(quantity) * price
             };
 
-            // Сохранить
+            // Сохраняем запись
             Storage.addRecord(record);
 
-            // Обновить интерфейс
+            // Обновляем интерфейс
             this.loadRecords();
             this.updateMonthlyTotal();
 
-            // Очистить форму
+            // Очищаем форму
             quantityInput.value = '';
             this.updateCurrentAmount();
 
-            // Фокус на количество для следующего ввода
+            // Очищаем поиск если используется
+            if (typeof searchManager !== 'undefined') {
+                searchManager.clear();
+            } else {
+                select.selectedIndex = 0;
+            }
+
+            // Убираем активные пресеты
+            const activePresets = document.querySelectorAll('.preset-btn.active');
+            activePresets.forEach(btn => btn.classList.remove('active'));
+
+            // Фокус на поиск или селект для следующего ввода
             setTimeout(() => {
-                quantityInput.focus();
+                if (typeof searchManager !== 'undefined') {
+                    const searchInput = document.getElementById('product-search');
+                    if (searchInput) searchInput.focus();
+                } else {
+                    select.focus();
+                }
             }, 100);
 
             Utils.showToast(`Добавлена запись: ${record.productName}`, 'success');
@@ -205,7 +354,7 @@ class ProductTracker {
     }
 
     /**
-     * Загрузить записи
+     * Загрузка записей
      */
     loadRecords() {
         const records = Storage.getCurrentMonthRecords();
@@ -214,7 +363,7 @@ class ProductTracker {
 
         if (!recordsList || !recordsCount) return;
 
-        // Обновить счетчик
+        // Обновляем счетчик
         recordsCount.textContent = records.length;
 
         if (records.length === 0) {
@@ -222,7 +371,7 @@ class ProductTracker {
             return;
         }
 
-        // Сортировать по дате (новые сначала)
+        // Сортируем по дате (новые сначала)
         records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         recordsList.innerHTML = '';
@@ -234,9 +383,9 @@ class ProductTracker {
     }
 
     /**
-     * Создать элемент записи
-     * @param {Object} record запись
-     * @returns {HTMLElement} элемент записи
+     * Создание элемента записи
+     * @param {Object} record Запись
+     * @returns {HTMLElement} Элемент записи
      */
     createRecordElement(record) {
         const div = document.createElement('div');
@@ -261,7 +410,7 @@ class ProductTracker {
     }
 
     /**
-     * Удалить запись
+     * Удаление записи
      * @param {number} recordId ID записи
      */
     deleteRecord(recordId) {
@@ -279,7 +428,7 @@ class ProductTracker {
     }
 
     /**
-     * Обновить месячную сумму
+     * Обновление месячной суммы
      */
     updateMonthlyTotal() {
         const records = Storage.getCurrentMonthRecords();
@@ -292,10 +441,10 @@ class ProductTracker {
     }
 
     /**
-     * Создать пустое состояние
-     * @param {string} icon иконка
-     * @param {string} title заголовок
-     * @param {string} subtitle подзаголовок
+     * Создание пустого состояния
+     * @param {string} icon Иконка
+     * @param {string} title Заголовок
+     * @param {string} subtitle Подзаголовок
      * @returns {string} HTML строка
      */
     getEmptyState(icon, title, subtitle) {
@@ -309,9 +458,9 @@ class ProductTracker {
     }
 
     /**
-     * Установить состояние загрузки
-     * @param {boolean} loading состояние загрузки
-     * @param {HTMLElement} button кнопка
+     * Установка состояния загрузки
+     * @param {boolean} loading Состояние загрузки
+     * @param {HTMLElement} button Кнопка
      */
     setLoading(loading, button) {
         this.isLoading = loading;
@@ -337,7 +486,24 @@ class ProductTracker {
             }
         }
     }
+
+    /**
+     * Обновление интерфейса (вызывается при изменениях в данных)
+     */
+    refresh() {
+        this.loadProducts();
+        this.loadRecords();
+        this.loadQuantityPresets();
+        this.updateMonthlyTotal();
+    }
 }
+
+// Глобальные функции для использования в HTML
+window.setQuantity = function(value) {
+    if (window.app) {
+        window.app.setQuantity(value);
+    }
+};
 
 // Глобальный экземпляр приложения
 let app;
@@ -345,12 +511,19 @@ let app;
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     app = new ProductTracker();
+    window.app = app; // Для доступа из HTML
 });
 
 // Обновление данных при возврате на страницу
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden && app) {
-        app.loadProducts();
-        app.updateMonthlyTotal();
+        app.refresh();
+    }
+});
+
+// Обработка изменений в localStorage от других вкладок
+window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('pt_') && app) {
+        app.refresh();
     }
 });
