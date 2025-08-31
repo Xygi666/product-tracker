@@ -11,86 +11,81 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <!-- Главный экран -->
-    <div id="main-screen" class="screen active">
-        <header class="header">
-            <h1>Учет продукции</h1>
-            <button id="settings-btn" class="header-btn">⚙️</button>
+    <div class="app-container">
+        <!-- Заголовок с навигацией -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">📦 Учет продукции</h1>
+                <button class="settings-btn" onclick="window.location.href='settings.html'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="m12 1 1.45 1.45L15.9 1l1.45 1.45L19.8 1l1.45 1.45L23.7 1l-1.45 1.45L23.7 4.9l-1.45 1.45L23.7 8.35l-1.45 1.45L23.7 11.8l-1.45 1.45-1.45-1.45L19.8 23.7l-1.45-1.45L16.9 23.7l-1.45-1.45L13.45 23.7l-1.45-1.45L10.55 23.7l-1.45-1.45L7.65 23.7l-1.45-1.45L4.75 23.7l-1.45-1.45L1.85 23.7l1.45-1.45L1.85 20.8l1.45-1.45L1.85 17.35l1.45-1.45L1.85 14.45l1.45-1.45 1.45 1.45L6.2.3l1.45 1.45L9.1.3l1.45 1.45L12 1z"></path>
+                    </svg>
+                </button>
+            </div>
         </header>
 
-        <div class="monthly-total">
-            <div class="total-label">Заработано за месяц:</div>
-            <div id="monthly-amount" class="total-amount">0 руб.</div>
-        </div>
-
-        <div class="main-form">
-            <div class="form-group">
-                <label for="product-select">Выберите продукт:</label>
-                <select id="product-select" class="form-control">
-                    <option value="">-- Выберите продукт --</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="quantity-input">Количество:</label>
-                <input type="number" id="quantity-input" class="form-control" 
-                       placeholder="Введите количество" min="0" step="0.01">
-            </div>
-
-            <div class="current-sum">
-                <span>Сумма: </span>
-                <span id="current-amount">0 руб.</span>
-            </div>
-
-            <button id="add-record-btn" class="btn btn-primary">Добавить запись</button>
-        </div>
-
-        <div class="records-section">
-            <h3>Записи за текущий месяц</h3>
-            <div id="records-list" class="records-list">
-                <!-- Записи будут добавляться динамически -->
+        <!-- Карточка месячной прибыли -->
+        <div class="stats-card">
+            <div class="stats-icon">💰</div>
+            <div class="stats-content">
+                <div class="stats-label">Заработано за месяц</div>
+                <div class="stats-amount" id="monthly-total">0 ₽</div>
             </div>
         </div>
-    </div>
 
-    <!-- Экран настроек -->
-    <div id="settings-screen" class="screen">
-        <header class="header">
-            <button id="back-btn" class="header-btn">←</button>
-            <h1>Настройки</h1>
-        </header>
-
-        <div class="settings-form">
-            <h3>Добавить новый продукт</h3>
+        <!-- Форма добавления записи -->
+        <div class="add-form-card">
+            <h2 class="card-title">📝 Новая запись</h2>
             
             <div class="form-group">
-                <label for="product-name">Наименование продукта:</label>
-                <input type="text" id="product-name" class="form-control" 
-                       placeholder="Введите название продукта">
+                <label class="form-label">Продукт</label>
+                <div class="select-wrapper">
+                    <select id="product-select" class="form-select">
+                        <option value="">Выберите продукт...</option>
+                    </select>
+                    <svg class="select-arrow" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="product-price">Цена за единицу (руб.):</label>
-                <input type="number" id="product-price" class="form-control" 
-                       placeholder="Введите цену" min="0" step="0.01">
+                <label class="form-label">Количество</label>
+                <input type="number" id="quantity-input" class="form-input" 
+                       placeholder="Введите количество..." min="0" step="0.01">
             </div>
 
-            <button id="add-product-btn" class="btn btn-primary">Добавить продукт</button>
+            <div class="amount-preview">
+                <span class="amount-label">Сумма:</span>
+                <span id="current-amount" class="amount-value">0 ₽</span>
+            </div>
+
+            <button id="add-record-btn" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                </svg>
+                Добавить запись
+            </button>
         </div>
 
-        <div class="products-section">
-            <h3>Список продуктов</h3>
-            <div id="products-list" class="products-list">
-                <!-- Продукты будут добавляться динамически -->
+        <!-- История записей -->
+        <div class="records-card">
+            <div class="card-header">
+                <h2 class="card-title">📊 Записи за месяц</h2>
+                <span id="records-count" class="records-count">0</span>
+            </div>
+            <div id="records-list" class="records-list">
+                <!-- Записи добавляются динамически -->
             </div>
         </div>
     </div>
 
     <!-- Уведомления -->
-    <div id="notification" class="notification"></div>
+    <div id="toast" class="toast"></div>
 
+    <!-- Скрипты -->
     <script src="js/storage.js"></script>
-    <script src="js/utils.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
