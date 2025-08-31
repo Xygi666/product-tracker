@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Учет продукции</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <!-- Главный экран -->
+    <div id="main-screen" class="screen active">
+        <header class="header">
+            <h1>Учет продукции</h1>
+            <button id="settings-btn" class="header-btn">⚙️</button>
+        </header>
+
+        <div class="monthly-total">
+            <div class="total-label">Заработано за месяц:</div>
+            <div id="monthly-amount" class="total-amount">0 руб.</div>
+        </div>
+
+        <div class="main-form">
+            <div class="form-group">
+                <label for="product-select">Выберите продукт:</label>
+                <select id="product-select" class="form-control">
+                    <option value="">-- Выберите продукт --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity-input">Количество:</label>
+                <input type="number" id="quantity-input" class="form-control" 
+                       placeholder="Введите количество" min="0" step="0.01">
+            </div>
+
+            <div class="current-sum">
+                <span>Сумма: </span>
+                <span id="current-amount">0 руб.</span>
+            </div>
+
+            <button id="add-record-btn" class="btn btn-primary">Добавить запись</button>
+        </div>
+
+        <div class="records-section">
+            <h3>Записи за текущий месяц</h3>
+            <div id="records-list" class="records-list">
+                <!-- Записи будут добавляться динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран настроек -->
+    <div id="settings-screen" class="screen">
+        <header class="header">
+            <button id="back-btn" class="header-btn">←</button>
+            <h1>Настройки</h1>
+        </header>
+
+        <div class="settings-form">
+            <h3>Добавить новый продукт</h3>
+            
+            <div class="form-group">
+                <label for="product-name">Наименование продукта:</label>
+                <input type="text" id="product-name" class="form-control" 
+                       placeholder="Введите название продукта">
+            </div>
+
+            <div class="form-group">
+                <label for="product-price">Цена за единицу (руб.):</label>
+                <input type="number" id="product-price" class="form-control" 
+                       placeholder="Введите цену" min="0" step="0.01">
+            </div>
+
+            <button id="add-product-btn" class="btn btn-primary">Добавить продукт</button>
+        </div>
+
+        <div class="products-section">
+            <h3>Список продуктов</h3>
+            <div id="products-list" class="products-list">
+                <!-- Продукты будут добавляться динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notification" class="notification"></div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
