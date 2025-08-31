@@ -1,10 +1,9 @@
 /**
- * Главный класс приложения для учета продукции
- * Управляет всем функционалом приложения
+ * Главное приложение для учета продукции
  */
 class ProductTracker {
     constructor() {
-        this.currentScreen = 'main';
+        this.isLoading = false;
         this.init();
     }
 
@@ -16,231 +15,112 @@ class ProductTracker {
         this.loadProducts();
         this.loadRecords();
         this.updateMonthlyTotal();
-        this.updateCurrentAmount();
+        this.addSampleDataIfEmpty();
         
-        // Добавляем тестовые данные при первом запуске
-        this.addDefaultProducts();
-        
-        console.log('Приложение "Учет продукции" запущено');
+        console.log('ProductTracker инициализирован');
     }
 
     /**
-     * Привязка событий к элементам интерфейса
+     * Привязка событий
      */
     bindEvents() {
-        // Навигация
-        document.getElementById('settings-btn').addEventListener('click', () => {
-            this.showScreen('settings');
-        });
+        const productSelect = document.getElementById('product-select');
+        const quantityInput = document.getElementById('quantity-input');
+        const addRecordBtn = document.getElementById('add-record-btn');
 
-        document.getElementById('back-btn').addEventListener('click', () => {
-            this.showScreen('main');
-        });
+        // События формы
+        productSelect?.addEventListener('change', () => this.updateCurrentAmount());
+        quantityInput?.addEventListener('input', Utils.debounce(() => this.updateCurrentAmount(), 300));
+        addRecordBtn?.addEventListener('click', () => this.addRecord());
 
-        // Главный экран
-        document.getElementById('add-record-btn').addEventListener('click', () => {
-            this.addRecord();
-        });
-
-        document.getElementById('product-select').addEventListener('change', () => {
-            this.updateCurrentAmount();
-        });
-
-        document.getElementById('quantity-input').addEventListener('input', () => {
-            this.updateCurrentAmount();
-        });
-
-        // Настройки
-        document.getElementById('add-product-btn').addEventListener('click', () => {
-            this.addProduct();
-        });
-
-        // Enter для быстрого добавления
-        document.getElementById('quantity-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        // Быстрые клавиши
+        quantityInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !this.isLoading) {
                 this.addRecord();
             }
         });
 
-        document.getElementById('product-name').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('product-price').focus();
-            }
-        });
-
-        document.getElementById('product-price').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addProduct();
+        // Предотвращение отправки формы
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
             }
         });
     }
 
     /**
-     * Переключение между экранами
-     * @param {string} screenName - название экрана для показа
+     * Добавить образцы данных при первом запуске
      */
-    showScreen(screenName) {
-        const screens = document.querySelectorAll('.screen');
-        screens.forEach(screen => {
-            screen.classList.remove('active', 'slide-in', 'slide-out');
-        });
-
-        const targetScreen = document.getElementById(`${screenName}-screen`);
-        targetScreen.classList.add('active', 'slide-in');
-        
-        this.currentScreen = screenName;
-
-        // Обновляем данные при возврате на главный экран
-        if (screenName === 'main') {
-            this.loadProducts();
-            this.updateCurrentAmount();
-        }
-    }
-
-    /**
-     * Добавление тестовых продуктов при первом запуске
-     */
-    addDefaultProducts() {
-        const existingProducts = Storage.getProducts();
-        if (existingProducts.length === 0) {
-            const defaultProducts = [
+    addSampleDataIfEmpty() {
+        const products = Storage.getProducts();
+        if (products.length === 0) {
+            const sampleProducts = [
                 { name: 'Хлеб белый', price: 45 },
                 { name: 'Хлеб черный', price: 50 },
-                { name: 'Булочка', price: 25 }
+                { name: 'Булочка с маком', price: 35 },
+                { name: 'Багет французский', price: 75 }
             ];
 
-            defaultProducts.forEach(product => {
+            sampleProducts.forEach(product => {
                 Storage.addProduct(product);
             });
 
             this.loadProducts();
-            Utils.showNotification('Добавлены примеры продуктов');
+            Utils.showToast('Добавлены образцы продуктов', 'success');
         }
     }
 
     /**
-     * Загрузка списка продуктов в выпадающий список
+     * Загрузить продукты в селект
      */
     loadProducts() {
         const products = Storage.getProducts();
         const select = document.getElementById('product-select');
         
-        // Очищаем текущие опции кроме заголовка
-        select.innerHTML = '<option value="">-- Выберите продукт --</option>';
-        
+        if (!select) return;
+
+        // Сохранить текущий выбор
+        const currentValue = select.value;
+
+        // Очистить опции
+        select.innerHTML = '<option value="">Выберите продукт...</option>';
+
+        if (products.length === 0) {
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = 'Нет продуктов (добавьте в настройках)';
+            emptyOption.disabled = true;
+            select.appendChild(emptyOption);
+            return;
+        }
+
+        // Добавить продукты
         products.forEach(product => {
             const option = document.createElement('option');
             option.value = product.id;
-            option.textContent = `${product.name} (${Utils.formatCurrency(product.price)})`;
+            option.textContent = `${product.name} • ${Utils.formatCurrency(product.price)}`;
             option.dataset.price = product.price;
             option.dataset.name = product.name;
             select.appendChild(option);
         });
 
-        // Обновляем список в настройках
-        this.updateProductsList();
+        // Восстановить выбор если возможно
+        if (currentValue && [...select.options].some(opt => opt.value === currentValue)) {
+            select.value = currentValue;
+        }
+
+        this.updateCurrentAmount();
     }
 
     /**
-     * Обновление списка продуктов в настройках
-     */
-    updateProductsList() {
-        const products = Storage.getProducts();
-        const container = document.getElementById('products-list');
-        
-        if (products.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: white; opacity: 0.7;">Продукты не добавлены</p>';
-            return;
-        }
-
-        container.innerHTML = '';
-        
-        products.forEach(product => {
-            const productElement = document.createElement('div');
-            productElement.className = 'product-item';
-            productElement.innerHTML = `
-                <div class="product-info">
-                    <h4>${product.name}</h4>
-                    <div class="product-price">${Utils.formatCurrency(product.price)}</div>
-                </div>
-                <button class="btn btn-danger" onclick="app.deleteProduct(${product.id})">
-                    Удалить
-                </button>
-            `;
-            container.appendChild(productElement);
-        });
-    }
-
-    /**
-     * Добавление нового продукта
-     */
-    addProduct() {
-        const nameInput = document.getElementById('product-name');
-        const priceInput = document.getElementById('product-price');
-        
-        const name = Utils.sanitizeString(nameInput.value);
-        const price = parseFloat(priceInput.value);
-
-        // Валидация
-        if (!name) {
-            Utils.showNotification('Введите название продукта', 'error');
-            nameInput.focus();
-            return;
-        }
-
-        if (!Utils.isValidNumber(priceInput.value) || price <= 0) {
-            Utils.showNotification('Введите корректную цену', 'error');
-            priceInput.focus();
-            return;
-        }
-
-        // Проверка на дублирование
-        const existingProducts = Storage.getProducts();
-        const isDuplicate = existingProducts.some(p => 
-            p.name.toLowerCase() === name.toLowerCase()
-        );
-
-        if (isDuplicate) {
-            Utils.showNotification('Продукт с таким названием уже существует', 'error');
-            return;
-        }
-
-        // Добавление продукта
-        const product = {
-            name: name,
-            price: price
-        };
-
-        Storage.addProduct(product);
-        this.loadProducts();
-
-        // Очистка полей
-        nameInput.value = '';
-        priceInput.value = '';
-        nameInput.focus();
-
-        Utils.showNotification('Продукт успешно добавлен');
-    }
-
-    /**
-     * Удаление продукта
-     * @param {number} productId - ID продукта для удаления
-     */
-    deleteProduct(productId) {
-        if (confirm('Вы уверены, что хотите удалить этот продукт?')) {
-            Storage.deleteProduct(productId);
-            this.loadProducts();
-            Utils.showNotification('Продукт удален');
-        }
-    }
-
-    /**
-     * Обновление текущей суммы на основе выбранного продукта и количества
+     * Обновить текущую сумму
      */
     updateCurrentAmount() {
         const select = document.getElementById('product-select');
         const quantityInput = document.getElementById('quantity-input');
-        const amountElement = document.getElementById('current-amount');
+        const currentAmount = document.getElementById('current-amount');
+        
+        if (!select || !quantityInput || !currentAmount) return;
 
         const selectedOption = select.options[select.selectedIndex];
         const quantity = parseFloat(quantityInput.value) || 0;
@@ -248,128 +128,229 @@ class ProductTracker {
         if (selectedOption && selectedOption.dataset.price && quantity > 0) {
             const price = parseFloat(selectedOption.dataset.price);
             const amount = price * quantity;
-            amountElement.textContent = Utils.formatCurrency(amount);
+            currentAmount.textContent = Utils.formatCurrency(amount);
+            currentAmount.style.color = 'var(--success-color)';
         } else {
-            amountElement.textContent = '0 руб.';
+            currentAmount.textContent = '0 ₽';
+            currentAmount.style.color = 'var(--text-secondary)';
         }
     }
 
     /**
-     * Добавление новой записи
+     * Добавить запись
      */
-    addRecord() {
+    async addRecord() {
+        if (this.isLoading) return;
+
         const select = document.getElementById('product-select');
         const quantityInput = document.getElementById('quantity-input');
+        const addButton = document.getElementById('add-record-btn');
+
+        if (!select || !quantityInput || !addButton) return;
 
         const selectedOption = select.options[select.selectedIndex];
-        const quantity = parseFloat(quantityInput.value);
+        const quantity = quantityInput.value.trim();
 
         // Валидация
         if (!selectedOption || !selectedOption.value) {
-            Utils.showNotification('Выберите продукт', 'error');
+            Utils.showToast('Выберите продукт', 'error');
             select.focus();
             return;
         }
 
-        if (!Utils.isValidNumber(quantityInput.value) || quantity <= 0) {
-            Utils.showNotification('Введите корректное количество', 'error');
+        if (!Utils.isValidNumber(quantity)) {
+            Utils.showToast('Введите корректное количество', 'error');
             quantityInput.focus();
+            quantityInput.select();
             return;
         }
 
-        // Создание записи
-        const record = {
-            productId: parseInt(selectedOption.value),
-            productName: selectedOption.dataset.name,
-            quantity: quantity,
-            price: parseFloat(selectedOption.dataset.price),
-            amount: quantity * parseFloat(selectedOption.dataset.price)
-        };
+        // Показать загрузку
+        this.setLoading(true, addButton);
 
-        Storage.addRecord(record);
-        this.loadRecords();
-        this.updateMonthlyTotal();
+        try {
+            // Создать запись
+            const record = {
+                productId: parseInt(selectedOption.value),
+                productName: selectedOption.dataset.name,
+                quantity: parseFloat(quantity),
+                price: parseFloat(selectedOption.dataset.price),
+                amount: parseFloat(quantity) * parseFloat(selectedOption.dataset.price)
+            };
 
-        // Очистка полей
-        quantityInput.value = '';
-        select.selectedIndex = 0;
-        this.updateCurrentAmount();
+            // Сохранить
+            Storage.addRecord(record);
 
-        Utils.showNotification('Запись добавлена');
-        
-        // Фокус на количество для быстрого ввода следующей записи
-        quantityInput.focus();
+            // Обновить интерфейс
+            this.loadRecords();
+            this.updateMonthlyTotal();
+
+            // Очистить форму
+            quantityInput.value = '';
+            this.updateCurrentAmount();
+
+            // Фокус на количество для следующего ввода
+            setTimeout(() => {
+                quantityInput.focus();
+            }, 100);
+
+            Utils.showToast(`Добавлена запись: ${record.productName}`, 'success');
+
+        } catch (error) {
+            console.error('Ошибка при добавлении записи:', error);
+            Utils.showToast('Ошибка при добавлении записи', 'error');
+        } finally {
+            this.setLoading(false, addButton);
+        }
     }
 
     /**
-     * Загрузка и отображение записей за текущий месяц
+     * Загрузить записи
      */
     loadRecords() {
         const records = Storage.getCurrentMonthRecords();
-        const container = document.getElementById('records-list');
+        const recordsList = document.getElementById('records-list');
+        const recordsCount = document.getElementById('records-count');
+
+        if (!recordsList || !recordsCount) return;
+
+        // Обновить счетчик
+        recordsCount.textContent = records.length;
 
         if (records.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: white; opacity: 0.7;">Записи за текущий месяц отсутствуют</p>';
+            recordsList.innerHTML = this.getEmptyState('📝', 'Записи отсутствуют', 'Добавьте первую запись о продукции');
             return;
         }
 
-        // Сортируем записи по дате (новые сначала)
-        records.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Сортировать по дате (новые сначала)
+        records.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        container.innerHTML = '';
+        recordsList.innerHTML = '';
 
         records.forEach(record => {
-            const recordElement = document.createElement('div');
-            recordElement.className = 'record-item';
-            recordElement.innerHTML = `
-                <div class="record-info">
-                    <div class="record-product">${record.productName}</div>
-                    <div class="record-details">
-                        ${record.quantity} шт. × ${Utils.formatCurrency(record.price)} 
-                        • ${Utils.formatDateTime(record.date)}
-                    </div>
-                </div>
-                <div class="record-amount">${Utils.formatCurrency(record.amount)}</div>
-                <button class="btn btn-danger" onclick="app.deleteRecord(${record.id})" title="Удалить запись">
-                    ×
-                </button>
-            `;
-            container.appendChild(recordElement);
+            const recordElement = this.createRecordElement(record);
+            recordsList.appendChild(recordElement);
         });
     }
 
     /**
-     * Удаление записи
-     * @param {number} recordId - ID записи для удаления
+     * Создать элемент записи
+     * @param {Object} record запись
+     * @returns {HTMLElement} элемент записи
+     */
+    createRecordElement(record) {
+        const div = document.createElement('div');
+        div.className = 'record-item';
+        
+        div.innerHTML = `
+            <div class="record-info">
+                <div class="record-title">${record.productName}</div>
+                <div class="record-details">
+                    ${record.quantity} шт. × ${Utils.formatCurrency(record.price)} • ${Utils.formatDate(record.createdAt)}
+                </div>
+            </div>
+            <div class="record-amount">${Utils.formatCurrency(record.amount)}</div>
+            <button class="delete-btn" onclick="app.deleteRecord(${record.id})" title="Удалить запись">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M12.854 4.854a.5.5 0 0 0-.708-.708L8 8.293 3.854 4.146a.5.5 0 1 0-.708.708L7.293 9l-4.147 4.146a.5.5 0 0 0 .708.708L8 9.707l4.146 4.147a.5.5 0 0 0 .708-.708L8.707 9l4.147-4.146z"/>
+                </svg>
+            </button>
+        `;
+
+        return div;
+    }
+
+    /**
+     * Удалить запись
+     * @param {number} recordId ID записи
      */
     deleteRecord(recordId) {
-        if (confirm('Удалить эту запись?')) {
+        if (!confirm('Удалить эту запись?')) return;
+
+        try {
             Storage.deleteRecord(recordId);
             this.loadRecords();
             this.updateMonthlyTotal();
-            Utils.showNotification('Запись удалена');
+            Utils.showToast('Запись удалена', 'success');
+        } catch (error) {
+            console.error('Ошибка при удалении записи:', error);
+            Utils.showToast('Ошибка при удалении записи', 'error');
         }
     }
 
     /**
-     * Обновление месячной суммы
+     * Обновить месячную сумму
      */
     updateMonthlyTotal() {
         const records = Storage.getCurrentMonthRecords();
         const total = records.reduce((sum, record) => sum + record.amount, 0);
+        const totalElement = document.getElementById('monthly-total');
         
-        document.getElementById('monthly-amount').textContent = Utils.formatCurrency(total);
+        if (totalElement) {
+            totalElement.textContent = Utils.formatCurrency(total);
+        }
+    }
+
+    /**
+     * Создать пустое состояние
+     * @param {string} icon иконка
+     * @param {string} title заголовок
+     * @param {string} subtitle подзаголовок
+     * @returns {string} HTML строка
+     */
+    getEmptyState(icon, title, subtitle) {
+        return `
+            <div class="empty-state">
+                <div class="empty-state-icon">${icon}</div>
+                <div class="empty-state-text">${title}</div>
+                <div class="empty-state-subtext">${subtitle}</div>
+            </div>
+        `;
+    }
+
+    /**
+     * Установить состояние загрузки
+     * @param {boolean} loading состояние загрузки
+     * @param {HTMLElement} button кнопка
+     */
+    setLoading(loading, button) {
+        this.isLoading = loading;
+        
+        if (button) {
+            button.disabled = loading;
+            if (loading) {
+                button.classList.add('loading');
+                button.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                    Добавление...
+                `;
+            } else {
+                button.classList.remove('loading');
+                button.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Добавить запись
+                `;
+            }
+        }
     }
 }
 
-// Запуск приложения при загрузке страницы
+// Глобальный экземпляр приложения
 let app;
+
+// Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
     app = new ProductTracker();
 });
 
-// Предотвращение случайного обновления страницы
-window.addEventListener('beforeunload', (e) => {
-    e.preventDefault();
-    e.returnValue = '';
+// Обновление данных при возврате на страницу
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && app) {
+        app.loadProducts();
+        app.updateMonthlyTotal();
+    }
 });
