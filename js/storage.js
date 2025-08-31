@@ -1,18 +1,21 @@
 /**
  * Класс для работы с локальным хранилищем
- * Управляет сохранением и загрузкой данных о продуктах и записях
  */
 class Storage {
     static PRODUCTS_KEY = 'pt_products';
     static RECORDS_KEY = 'pt_records';
+    static PRESETS_KEY = 'pt_presets';
+    static SETTINGS_KEY = 'pt_settings';
     static VERSION_KEY = 'pt_version';
-    static CURRENT_VERSION = '2.0';
+    static CURRENT_VERSION = '3.0';
 
     /**
      * Инициализация хранилища
      */
     static init() {
         this.migrateData();
+        this.initDefaultPresets();
+        this.initSettings();
     }
 
     /**
@@ -21,15 +24,35 @@ class Storage {
     static migrateData() {
         const version = localStorage.getItem(this.VERSION_KEY);
         if (version !== this.CURRENT_VERSION) {
-            // Здесь можно добавить миграции при необходимости
             localStorage.setItem(this.VERSION_KEY, this.CURRENT_VERSION);
         }
     }
 
     /**
-     * Получить все продукты
-     * @returns {Array} массив продуктов
+     * Инициализация настроек по умолчанию
      */
+    static initSettings() {
+        const settings = this.getSettings();
+        if (!settings.theme) {
+            settings.theme = 'light';
+            this.saveSettings(settings);
+        }
+    }
+
+    /**
+     * Инициализация пресетов по умолчанию
+     */
+    static initDefaultPresets() {
+        const presets = this.getQuantityPresets();
+        if (presets.length === 0) {
+            const defaultPresets = [1, 5, 10, 25, 50];
+            defaultPresets.forEach(preset => {
+                this.addQuantityPreset(preset);
+            });
+        }
+    }
+
+    // Методы для продуктов (обновленные)
     static getProducts() {
         try {
             const products = localStorage.getItem(this.PRODUCTS_KEY);
@@ -40,10 +63,6 @@ class Storage {
         }
     }
 
-    /**
-     * Сохранить продукты
-     * @param {Array} products массив продуктов
-     */
     static saveProducts(products) {
         try {
             localStorage.setItem(this.PRODUCTS_KEY, JSON.stringify(products));
@@ -53,17 +72,13 @@ class Storage {
         }
     }
 
-    /**
-     * Добавить продукт
-     * @param {Object} product объект продукта
-     * @returns {Object} добавленный продукт с ID
-     */
     static addProduct(product) {
         const products = this.getProducts();
         const newProduct = {
             id: this.generateId(),
             name: product.name.trim(),
             price: parseFloat(product.price),
+            isFavorite: product.isFavorite || false,
             createdAt: new Date().toISOString()
         };
         
@@ -72,45 +87,115 @@ class Storage {
         return newProduct;
     }
 
-    /**
-     * Обновить продукт
-     * @param {number} id ID продукта
-     * @param {Object} updates обновления
-     */
     static updateProduct(id, updates) {
         const products = this.getProducts();
         const index = products.findIndex(p => p.id === id);
         
         if (index !== -1) {
-            products[index] = { ...products[index], ...updates };
+            products[index] = { 
+                ...products[index], 
+                ...updates,
+                updatedAt: new Date().toISOString()
+            };
             this.saveProducts(products);
+            return products[index];
         }
+        return null;
     }
 
-    /**
-     * Удалить продукт
-     * @param {number} id ID продукта
-     */
     static deleteProduct(id) {
         const products = this.getProducts();
         const filteredProducts = products.filter(p => p.id !== id);
         this.saveProducts(filteredProducts);
     }
 
-    /**
-     * Найти продукт по ID
-     * @param {number} id ID продукта
-     * @returns {Object|null} продукт или null
-     */
     static getProductById(id) {
         const products = this.getProducts();
         return products.find(p => p.id === id) || null;
     }
 
-    /**
-     * Получить все записи
-     * @returns {Array} массив записей
-     */
+    static getFavoriteProducts() {
+        const products = this.getProducts();
+        return products.filter(p => p.isFavorite);
+    }
+
+    static searchProducts(query) {
+        const products = this.getProducts();
+        if (!query) return products;
+        
+        const lowerQuery = query.toLowerCase();
+        return products.filter(p => 
+            p.name.toLowerCase().includes(lowerQuery)
+        );
+    }
+
+    // Методы для пресетов количества
+    static getQuantityPresets() {
+        try {
+            const presets = localStorage.getItem(this.PRESETS_KEY);
+            return presets ? JSON.parse(presets) : [];
+        } catch (error) {
+            console.error('Ошибка при загрузке пресетов:', error);
+            return [];
+        }
+    }
+
+    static saveQuantityPresets(presets) {
+        try {
+            localStorage.setItem(this.PRESETS_KEY, JSON.stringify(presets));
+        } catch (error) {
+            console.error('Ошибка при сохранении пресетов:', error);
+        }
+    }
+
+    static addQuantityPreset(value) {
+        const presets = this.getQuantityPresets();
+        const numValue = parseFloat(value);
+        
+        if (numValue > 0 && !presets.includes(numValue)) {
+            presets.push(numValue);
+            presets.sort((a, b) => a - b);
+            this.saveQuantityPresets(presets);
+        }
+    }
+
+    static removeQuantityPreset(value) {
+        const presets = this.getQuantityPresets();
+        const filteredPresets = presets.filter(p => p !== value);
+        this.saveQuantityPresets(filteredPresets);
+    }
+
+    // Методы для настроек
+    static getSettings() {
+        try {
+            const settings = localStorage.getItem(this.SETTINGS_KEY);
+            return settings ? JSON.parse(settings) : {};
+        } catch (error) {
+            console.error('Ошибка при загрузке настроек:', error);
+            return {};
+        }
+    }
+
+    static saveSettings(settings) {
+        try {
+            localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
+        } catch (error) {
+            console.error('Ошибка при сохранении настроек:', error);
+        }
+    }
+
+    static getSetting(key, defaultValue = null) {
+        const settings = this.getSettings();
+        return settings[key] !== undefined ? settings[key] : defaultValue;
+    }
+
+    static setSetting(key, value) {
+        const settings = this.getSettings();
+        settings[key] = value;
+        this.saveSettings(settings);
+    }
+
+    // Остальные методы остаются без изменений...
     static getRecords() {
         try {
             const records = localStorage.getItem(this.RECORDS_KEY);
@@ -121,10 +206,6 @@ class Storage {
         }
     }
 
-    /**
-     * Сохранить записи
-     * @param {Array} records массив записей
-     */
     static saveRecords(records) {
         try {
             localStorage.setItem(this.RECORDS_KEY, JSON.stringify(records));
@@ -134,11 +215,6 @@ class Storage {
         }
     }
 
-    /**
-     * Добавить запись
-     * @param {Object} record объект записи
-     * @returns {Object} добавленная запись с ID
-     */
     static addRecord(record) {
         const records = this.getRecords();
         const newRecord = {
@@ -156,20 +232,12 @@ class Storage {
         return newRecord;
     }
 
-    /**
-     * Удалить запись
-     * @param {number} id ID записи
-     */
     static deleteRecord(id) {
         const records = this.getRecords();
         const filteredRecords = records.filter(r => r.id !== id);
         this.saveRecords(filteredRecords);
     }
 
-    /**
-     * Получить записи за текущий месяц
-     * @returns {Array} записи за текущий месяц
-     */
     static getCurrentMonthRecords() {
         const records = this.getRecords();
         const now = new Date();
@@ -183,30 +251,21 @@ class Storage {
         });
     }
 
-    /**
-     * Очистить все записи
-     */
     static clearAllRecords() {
         localStorage.removeItem(this.RECORDS_KEY);
     }
 
-    /**
-     * Экспортировать данные
-     * @returns {Object} объект с данными для экспорта
-     */
     static exportData() {
         return {
             products: this.getProducts(),
             records: this.getRecords(),
+            presets: this.getQuantityPresets(),
+            settings: this.getSettings(),
             exportDate: new Date().toISOString(),
             version: this.CURRENT_VERSION
         };
     }
 
-    /**
-     * Импортировать данные
-     * @param {Object} data данные для импорта
-     */
     static importData(data) {
         if (data.products) {
             this.saveProducts(data.products);
@@ -214,20 +273,18 @@ class Storage {
         if (data.records) {
             this.saveRecords(data.records);
         }
+        if (data.presets) {
+            this.saveQuantityPresets(data.presets);
+        }
+        if (data.settings) {
+            this.saveSettings(data.settings);
+        }
     }
 
-    /**
-     * Генерировать уникальный ID
-     * @returns {number} уникальный ID
-     */
     static generateId() {
         return Date.now() + Math.floor(Math.random() * 1000);
     }
 
-    /**
-     * Получить размер хранилища в байтах
-     * @returns {number} размер в байтах
-     */
     static getStorageSize() {
         let total = 0;
         for (let key in localStorage) {
@@ -240,14 +297,9 @@ class Storage {
 }
 
 /**
- * Утилиты для работы с данными
+ * Утилиты (расширенные)
  */
 class Utils {
-    /**
-     * Форматировать валюту
-     * @param {number} amount сумма
-     * @returns {string} отформатированная строка
-     */
     static formatCurrency(amount) {
         return new Intl.NumberFormat('ru-RU', {
             style: 'decimal',
@@ -256,11 +308,6 @@ class Utils {
         }).format(amount) + ' ₽';
     }
 
-    /**
-     * Форматировать дату
-     * @param {string} dateString строка даты
-     * @returns {string} отформатированная дата
-     */
     static formatDate(dateString) {
         const date = new Date(dateString);
         const now = new Date();
@@ -285,11 +332,6 @@ class Utils {
         }
     }
 
-    /**
-     * Показать уведомление
-     * @param {string} message текст
-     * @param {string} type тип ('success', 'error', 'warning')
-     */
     static showToast(message, type = 'success') {
         const toast = document.getElementById('toast');
         if (!toast) return;
@@ -303,30 +345,14 @@ class Utils {
         }, 3000);
     }
 
-    /**
-     * Валидация числа
-     * @param {string} value значение
-     * @returns {boolean} валидно ли число
-     */
     static isValidNumber(value) {
         return !isNaN(value) && !isNaN(parseFloat(value)) && parseFloat(value) > 0;
     }
 
-    /**
-     * Очистка строки
-     * @param {string} str строка
-     * @returns {string} очищенная строка
-     */
     static sanitizeString(str) {
         return str.trim().replace(/\s+/g, ' ');
     }
 
-    /**
-     * Debounce функция
-     * @param {Function} func функция
-     * @param {number} wait время ожидания
-     * @returns {Function} debounced функция
-     */
     static debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -337,6 +363,48 @@ class Utils {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    // Новые утилиты
+    static copyToClipboard(text) {
+        if (navigator.clipboard) {
+            return navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                return Promise.resolve();
+            } catch (err) {
+                document.body.removeChild(textArea);
+                return Promise.reject(err);
+            }
+        }
+    }
+
+    static shareData(data) {
+        if (navigator.share) {
+            return navigator.share(data);
+        } else {
+            // Fallback: копировать в буфер обмена
+            return this.copyToClipboard(data.text || data.url || '');
+        }
+    }
+
+    static downloadFile(content, filename, mimeType = 'text/plain') {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 }
 
