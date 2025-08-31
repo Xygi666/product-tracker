@@ -1,27 +1,33 @@
 {
-    "name": "Учет продукции",
-    "short_name": "Продукция",
-    "description": "Приложение для учета готовой продукции и расчета прибыли",
-    "start_url": "./",
-    "display": "standalone",
-    "orientation": "portrait-primary",
-    "theme_color": "#6366f1",
-    "background_color": "#ffffff",
-    "scope": "./",
-    "lang": "ru",
-    "categories": ["productivity", "business"],
-    "icons": [
-        {
-            "src": "icons/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "icons/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
-    ]
+  "name": "Учет продукции",
+  "short_name": "Продукция",
+  "description": "Приложение для учета готовой продукции и расчета прибыли",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "icons/android-launchericon-192-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/android-launchericon-512-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/android-launchericon-512-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
