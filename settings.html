@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Настройки - Учет продукции</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
 </head>
-<body>
+<body data-theme="light">
     <div class="app-container">
         <!-- Заголовок с кнопкой назад -->
         <header class="app-header">
@@ -22,6 +22,21 @@
                 <h1 class="app-title">⚙️ Настройки</h1>
             </div>
         </header>
+
+        <!-- Настройки пресетов -->
+        <div class="presets-card">
+            <h2 class="card-title">🔢 Пресеты количества</h2>
+            <div class="presets-manager">
+                <div class="current-presets" id="current-presets">
+                    <!-- Пресеты добавляются динамически -->
+                </div>
+                <div class="add-preset-form">
+                    <input type="number" id="new-preset-value" class="form-input" 
+                           placeholder="Новый пресет..." min="0.01" step="0.01">
+                    <button id="add-preset-btn" class="btn btn-small btn-primary">Добавить</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Форма добавления продукта -->
         <div class="add-form-card">
@@ -39,6 +54,13 @@
                        placeholder="Введите цену..." min="0" step="0.01">
             </div>
 
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" id="is-favorite" class="form-checkbox">
+                    Добавить в избранные
+                </label>
+            </div>
+
             <button id="add-product-btn" class="btn btn-primary">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
@@ -51,11 +73,15 @@
         <div class="products-card">
             <div class="card-header">
                 <h2 class="card-title">📦 Мои продукты</h2>
-                <span id="products-count" class="records-count">0</span>
+                <div class="header-actions">
+                    <span id="products-count" class="records-count">0</span>
+                    <div class="filter-buttons">
+                        <button id="filter-all" class="filter-btn active">Все</button>
+                        <button id="filter-favorites" class="filter-btn">⭐ Избранные</button>
+                    </div>
+                </div>
             </div>
-            <div id="products-list" class="products-list">
-                <!-- Продукты добавляются динамически -->
-            </div>
+            <div id="products-list" class="products-list"></div>
         </div>
 
         <!-- Управление данными -->
@@ -67,7 +93,11 @@
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                     </svg>
-                    Экспорт данных
+                    Экспорт JSON
+                </button>
+
+                <button id="export-excel-btn" class="btn btn-secondary">
+                    📊 Экспорт Excel
                 </button>
 
                 <button id="clear-records-btn" class="btn btn-danger">
@@ -81,11 +111,43 @@
         </div>
     </div>
 
+    <!-- Модал редактирования продукта -->
+    <div id="edit-product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать продукт</h3>
+                <button class="close-btn" onclick="closeEditModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Название</label>
+                    <input type="text" id="edit-product-name" class="form-input" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Цена (₽)</label>
+                    <input type="number" id="edit-product-price" class="form-input" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="edit-is-favorite" class="form-checkbox">
+                        Избранный продукт
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button id="save-product-btn" class="btn btn-primary">Сохранить</button>
+                    <button class="btn btn-secondary" onclick="closeEditModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Уведомления -->
     <div id="toast" class="toast"></div>
 
-    <!-- ВАЖНО: Правильный порядок загрузки скриптов -->
+    <!-- Скрипты -->
     <script src="js/storage.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/themes.js"></script>
     <script src="js/settings.js"></script>
 </body>
 </html>
