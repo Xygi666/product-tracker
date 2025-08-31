@@ -28,28 +28,45 @@ class SettingsManager {
         const clearRecordsBtn = document.getElementById('clear-records-btn');
 
         // Добавление продукта
-        addProductBtn?.addEventListener('click', () => this.addProduct());
+        if (addProductBtn) {
+            addProductBtn.addEventListener('click', () => this.addProduct());
+        }
 
         // Быстрые клавиши
-        productNameInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                productPriceInput?.focus();
-            }
-        });
+        if (productNameInput) {
+            productNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const priceInput = document.getElementById('product-price');
+                    if (priceInput) priceInput.focus();
+                }
+            });
+        }
 
-        productPriceInput?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !this.isLoading) {
-                this.addProduct();
-            }
-        });
+        if (productPriceInput) {
+            productPriceInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !this.isLoading) {
+                    this.addProduct();
+                }
+            });
+        }
 
         // Управление данными
-        exportBtn?.addEventListener('click', () => this.exportData());
-        clearRecordsBtn?.addEventListener('click', () => this.clearAllRecords());
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportData());
+        }
+        
+        if (clearRecordsBtn) {
+            clearRecordsBtn.addEventListener('click', () => this.clearAllRecords());
+        }
 
         // Валидация в реальном времени
-        productNameInput?.addEventListener('input', () => this.validateForm());
-        productPriceInput?.addEventListener('input', () => this.validateForm());
+        if (productNameInput) {
+            productNameInput.addEventListener('input', () => this.validateForm());
+        }
+        
+        if (productPriceInput) {
+            productPriceInput.addEventListener('input', () => this.validateForm());
+        }
     }
 
     /**
@@ -65,8 +82,22 @@ class SettingsManager {
         const name = nameInput.value.trim();
         const price = priceInput.value.trim();
         
-        const isValid = name.length > 0 && Utils.isValidNumber(price);
+        const isValid = name.length > 0 && this.isValidNumber(price);
         addButton.disabled = !isValid || this.isLoading;
+    }
+
+    /**
+     * Проверка валидности числа
+     */
+    isValidNumber(value) {
+        return !isNaN(value) && !isNaN(parseFloat(value)) && parseFloat(value) > 0;
+    }
+
+    /**
+     * Очистка строки
+     */
+    sanitizeString(str) {
+        return str.trim().replace(/\s+/g, ' ');
     }
 
     /**
@@ -81,25 +112,25 @@ class SettingsManager {
 
         if (!nameInput || !priceInput || !addButton) return;
 
-        const name = Utils.sanitizeString(nameInput.value);
+        const name = this.sanitizeString(nameInput.value);
         const price = priceInput.value.trim();
 
         // Валидация
         if (!name) {
-            Utils.showToast('Введите название продукта', 'error');
+            this.showToast('Введите название продукта', 'error');
             nameInput.focus();
             return;
         }
 
         if (name.length > 50) {
-            Utils.showToast('Название слишком длинное (макс. 50 символов)', 'error');
+            this.showToast('Название слишком длинное (макс. 50 символов)', 'error');
             nameInput.focus();
             nameInput.select();
             return;
         }
 
-        if (!Utils.isValidNumber(price)) {
-            Utils.showToast('Введите корректную цену', 'error');
+        if (!this.isValidNumber(price)) {
+            this.showToast('Введите корректную цену', 'error');
             priceInput.focus();
             priceInput.select();
             return;
@@ -112,7 +143,7 @@ class SettingsManager {
         );
 
         if (isDuplicate) {
-            Utils.showToast('Продукт с таким названием уже существует', 'warning');
+            this.showToast('Продукт с таким названием уже существует', 'warning');
             nameInput.focus();
             nameInput.select();
             return;
@@ -136,11 +167,11 @@ class SettingsManager {
             priceInput.value = '';
             nameInput.focus();
 
-            Utils.showToast(`Продукт "${product.name}" добавлен`, 'success');
+            this.showToast(`Продукт "${product.name}" добавлен`, 'success');
 
         } catch (error) {
             console.error('Ошибка при добавлении продукта:', error);
-            Utils.showToast('Ошибка при добавлении продукта', 'error');
+            this.showToast('Ошибка при добавлении продукта', 'error');
         } finally {
             this.setLoading(false, addButton);
         }
@@ -165,7 +196,7 @@ class SettingsManager {
         }
 
         // Сортировать по дате создания (новые сначала)
-        products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         productsList.innerHTML = '';
 
@@ -177,8 +208,6 @@ class SettingsManager {
 
     /**
      * Создать элемент продукта
-     * @param {Object} product продукт
-     * @returns {HTMLElement} элемент продукта
      */
     createProductElement(product) {
         const div = document.createElement('div');
@@ -187,7 +216,7 @@ class SettingsManager {
         div.innerHTML = `
             <div class="product-info">
                 <div class="product-name">${product.name}</div>
-                <div class="product-price">${Utils.formatCurrency(product.price)} за шт.</div>
+                <div class="product-price">${this.formatCurrency(product.price)} за шт.</div>
             </div>
             <button class="delete-btn" onclick="settings.deleteProduct(${product.id})" title="Удалить продукт">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -200,8 +229,18 @@ class SettingsManager {
     }
 
     /**
+     * Форматировать валюту
+     */
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('ru-RU', {
+            style: 'decimal',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(amount) + ' ₽';
+    }
+
+    /**
      * Удалить продукт
-     * @param {number} productId ID продукта
      */
     deleteProduct(productId) {
         const product = Storage.getProductById(productId);
@@ -220,10 +259,10 @@ class SettingsManager {
         try {
             Storage.deleteProduct(productId);
             this.loadProducts();
-            Utils.showToast(`Продукт "${product.name}" удален`, 'success');
+            this.showToast(`Продукт "${product.name}" удален`, 'success');
         } catch (error) {
             console.error('Ошибка при удалении продукта:', error);
-            Utils.showToast('Ошибка при удалении продукта', 'error');
+            this.showToast('Ошибка при удалении продукта', 'error');
         }
     }
 
@@ -245,10 +284,10 @@ class SettingsManager {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            Utils.showToast('Данные экспортированы', 'success');
+            this.showToast('Данные экспортированы', 'success');
         } catch (error) {
             console.error('Ошибка при экспорте:', error);
-            Utils.showToast('Ошибка при экспорте данных', 'error');
+            this.showToast('Ошибка при экспорте данных', 'error');
         }
     }
 
@@ -258,7 +297,7 @@ class SettingsManager {
     clearAllRecords() {
         const records = Storage.getRecords();
         if (records.length === 0) {
-            Utils.showToast('Нет записей для удаления', 'warning');
+            this.showToast('Нет записей для удаления', 'warning');
             return;
         }
 
@@ -267,19 +306,15 @@ class SettingsManager {
 
         try {
             Storage.clearAllRecords();
-            Utils.showToast('Все записи удалены', 'success');
+            this.showToast('Все записи удалены', 'success');
         } catch (error) {
             console.error('Ошибка при очистке записей:', error);
-            Utils.showToast('Ошибка при удалении записей', 'error');
+            this.showToast('Ошибка при удалении записей', 'error');
         }
     }
 
     /**
      * Создать пустое состояние
-     * @param {string} icon иконка
-     * @param {string} title заголовок
-     * @param {string} subtitle подзаголовок
-     * @returns {string} HTML строка
      */
     getEmptyState(icon, title, subtitle) {
         return `
@@ -292,9 +327,23 @@ class SettingsManager {
     }
 
     /**
+     * Показать уведомление
+     */
+    showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+
+        toast.textContent = message;
+        toast.className = `toast ${type}`;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    /**
      * Установить состояние загрузки
-     * @param {boolean} loading состояние загрузки
-     * @param {HTMLElement} button кнопка
      */
     setLoading(loading, button) {
         this.isLoading = loading;
@@ -303,7 +352,6 @@ class SettingsManager {
             button.disabled = loading;
             if (loading) {
                 button.classList.add('loading');
-                const originalText = button.textContent;
                 button.innerHTML = `
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-6.219-8.56"/>
@@ -330,5 +378,10 @@ let settings;
 
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
-    settings = new SettingsManager();
+    // Проверяем доступность Storage перед инициализацией
+    if (typeof Storage !== 'undefined') {
+        settings = new SettingsManager();
+    } else {
+        console.error('Storage не доступен');
+    }
 });
