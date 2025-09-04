@@ -12,19 +12,19 @@
   "categories": ["productivity", "business"],
   "icons": [
     {
-      "src": "icons/android-launcher-icon-192-192.png",
+      "src": "icons/android-launcher-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/android-launcher-icon-512-512.png",
+      "src": "icons/android-launcher-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/android-launcher-icon-512-512.png",
+      "src": "icons/android-launcher-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -36,13 +36,11 @@
       "short_name": "Быстрое",
       "description": "Мгновенный ввод продукции",
       "url": "quick-add.html",
-      "icons": [
-        {
-          "src": "icons/android-launcher-icon-192-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{
+        "src": "icons/android-launcher-icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      }]
     },
     {
       "name": "Добавить продукт",
