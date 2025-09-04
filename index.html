@@ -1,239 +1,95 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Учет продукции</title>
-    
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/android-icon-192.png">
-    <link rel="icon" href="icons/android-icon-192.png" type="image/png">
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/themes.css">
-    
-    <!-- Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => console.log('SW registered:', registration.scope))
-                    .catch(error => console.log('SW registration failed:', error));
-            });
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#6366f1" />
+  <title>Учет продукции</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
 </head>
 <body data-theme="light">
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-content">
-                <h1 class="app-title">📦 Учет продукции</h1>
-                <div class="header-actions">
-                    <button id="statistics-btn" class="header-btn" title="Статистика">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 3v18h18"></path>
-                            <path d="M7 16l4-4 4 4 6-6"></path>
-                        </svg>
-                    </button>
-                    <button id="theme-toggle" class="header-btn" title="Переключить тему">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-                        </svg>
-                    </button>
-                    <button id="quick-export-btn" class="header-btn" title="Быстрый экспорт">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7,10 12,15 17,10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                    </button>
-                    <button class="settings-btn" onclick="window.location.href='settings.html'" title="Настройки">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.4l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </header>
+  <div class="app-container">
+    <header class="app-header">
+      <h1 class="app-title">📦 Учет продукции</h1>
+      <div class="header-actions">
+        <button id="statistics-btn" title="Статистика">📊</button>
+        <button id="theme-toggle" title="Тема">🌓</button>
+        <button id="quick-export-btn" title="Экспорт">⬇️</button>
+        <button onclick="location.href='settings.html'" title="Настройки">⚙️</button>
+      </div>
+    </header>
 
-        <!-- Main Stats -->
-        <div class="main-stats">
-            <div class="stats-card sales-card">
-                <div class="stats-icon">💰</div>
-                <div class="stats-content">
-                    <div class="stats-label">Доходы за месяц</div>
-                    <div class="stats-amount" id="monthly-sales">0 ₽</div>
-                </div>
-            </div>
-            <div class="stats-card production-card">
-                <div class="stats-icon">📦</div>
-                <div class="stats-content">
-                    <div class="stats-label">Произведено за месяц</div>
-                    <div class="stats-amount" id="monthly-production">0 шт</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Record Form -->
-        <div class="add-form-card">
-            <h2 class="card-title">📝 Новая запись</h2>
-            
-            <div class="form-group">
-                <label class="form-label">Продукт</label>
-                <div class="select-wrapper">
-                    <div class="search-container">
-                        <input type="text" id="product-search" class="form-input" 
-                               placeholder="Поиск или выбор продукта..." autocomplete="off">
-                        <div id="search-results" class="search-results"></div>
-                    </div>
-                    <select id="product-select" class="form-select" style="display: none;">
-                        <option value="">Выберите продукт...</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Количество</label>
-                <input type="number" id="quantity-input" class="form-input" 
-                       placeholder="Введите количество..." min="0" step="0.01">
-                
-                <div class="quantity-presets" id="quantity-presets"></div>
-            </div>
-
-            <div class="amount-preview">
-                <span class="amount-label">Сумма:</span>
-                <span id="current-amount" class="amount-value">0 ₽</span>
-            </div>
-
-            <button id="add-record-btn" class="btn btn-primary">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                </svg>
-                Добавить запись
-            </button>
-        </div>
-
-        <!-- Records List -->
-        <div class="records-card">
-            <div class="card-header">
-                <h2 class="card-title">📊 Записи за месяц</h2>
-                <div class="header-actions">
-                    <span id="records-count" class="records-count">0</span>
-                    <button id="export-csv-btn" class="btn btn-small btn-secondary" title="Экспорт в CSV">
-                        📊 CSV
-                    </button>
-                </div>
-            </div>
-            <div id="records-list" class="records-list"></div>
-        </div>
+    <div class="main-stats">
+      <div class="stats-card sales-card">
+        <div>💰 Доходы за месяц</div>
+        <div id="monthly-sales" class="stats-amount">0 ₽</div>
+      </div>
     </div>
 
-    <!-- Statistics Modal -->
-    <div id="statistics-modal" class="modal">
-        <div class="modal-content statistics-modal">
-            <div class="modal-header">
-                <h3>📊 Подробная статистика</h3>
-                <button class="close-btn" onclick="closeStatisticsModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <!-- Salary Stats -->
-                <div class="salary-stats">
-                    <h4>💵 Расчет зарплаты</h4>
-                    <div class="salary-breakdown">
-                        <div class="salary-item">
-                            <span>Доходы от продаж:</span>
-                            <span id="stat-sales">0 ₽</span>
-                        </div>
-                        <div class="salary-item">
-                            <span>Оклад:</span>
-                            <span id="stat-salary">0 ₽</span>
-                        </div>
-                        <div class="salary-item">
-                            <span>Итого до налогов:</span>
-                            <span id="stat-before-tax">0 ₽</span>
-                        </div>
-                        <div class="salary-item tax">
-                            <span>Налог (<span id="stat-tax-percent">13</span>%):</span>
-                            <span id="stat-tax-amount">0 ₽</span>
-                        </div>
-                        <div class="salary-item advance">
-                            <span>Аванс:</span>
-                            <span id="stat-advance">0 ₽</span>
-                        </div>
-                        <div class="salary-item total">
-                            <span>К доплате:</span>
-                            <span id="stat-net-salary">0 ₽</span>
-                        </div>
-                    </div>
-                </div>
+    <div class="add-form-card">
+      <h2>📝 Новая запись</h2>
 
-                <!-- Production Stats -->
-                <div class="production-stats">
-                    <h4>📦 Производство</h4>
-                    <div class="production-breakdown">
-                        <div class="production-item">
-                            <span>Всего произведено:</span>
-                            <span id="stat-total-production">0 шт</span>
-                        </div>
-                        <div class="production-item">
-                            <span>Количество записей:</span>
-                            <span id="stat-records-count">0</span>
-                        </div>
-                        <div class="production-item">
-                            <span>Средняя прибыль за запись:</span>
-                            <span id="stat-avg-per-record">0 ₽</span>
-                        </div>
-                    </div>
-                </div>
+      <div class="form-group">
+        <label>Продукт</label>
+        <input type="text" id="product-search" class="form-input" placeholder="Поиск..." autocomplete="off"/>
+        <select id="product-select" class="form-select"></select>
+        <div id="search-results" class="search-results"></div>
+      </div>
 
-                <!-- Top Products -->
-                <div class="top-products-stats">
-                    <h4>🏆 Топ продукты</h4>
-                    <div id="stat-top-products" class="top-products-list"></div>
-                </div>
-            </div>
-        </div>
+      <div class="form-group">
+        <label>Количество</label>
+        <input type="number" id="quantity-input" class="form-input" placeholder="Кол-во" min="0" step="0.01"/>
+        <div id="quantity-presets" class="quantity-presets"></div>
+      </div>
+
+      <div class="amount-preview">
+        Сумма: <span id="current-amount">0 ₽</span>
+      </div>
+
+      <button id="add-record-btn" class="btn btn-primary">Добавить запись</button>
     </div>
 
-    <!-- Quick Export Modal -->
-    <div id="quick-export-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Быстрый экспорт</h3>
-                <button class="close-btn" onclick="closeQuickExport()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="export-options">
-                    <button class="btn btn-primary" onclick="exportToCSV()">
-                        📊 Скачать CSV
-                    </button>
-                    <button class="btn btn-secondary" onclick="exportToEmail()">
-                        📧 Отправить на email
-                    </button>
-                    <button class="btn btn-secondary" onclick="shareReport()">
-                        📤 Поделиться
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div class="records-card">
+      <h2>📋 Записи</h2>
+      <div class="records-header">
+        <span id="records-count">0</span> шт
+        <button id="export-csv-btn" class="btn btn-small btn-secondary">CSV</button>
+      </div>
+      <div id="records-list" class="records-list"></div>
     </div>
+  </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast"></div>
+  <div id="statistics-modal" class="modal">
+    <div class="modal-content">
+      <h3>Статистика по продуктам</h3>
+      <div id="stat-products" class="stat-products"></div>
+      <button onclick="closeStatisticsModal()" class="btn btn-secondary">Закрыть</button>
+    </div>
+  </div>
 
-    <!-- Scripts -->
-    <script src="js/storage.js"></script>
-    <script src="js/export.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/themes.js"></script>
-    <script src="js/app.js"></script>
+  <div id="quick-export-modal" class="modal">
+    <div class="modal-content">
+      <h3>Быстрый экспорт</h3>
+      <button onclick="exportToCSV()" class="btn btn-primary">CSV</button>
+      <button onclick="exportToEmail()" class="btn btn-secondary">Email</button>
+      <button onclick="shareReport()" class="btn btn-secondary">Поделиться</button>
+      <button onclick="closeQuickExport()" class="btn btn-small btn-secondary">Закрыть</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/themes.js"></script>
 </body>
 </html>
