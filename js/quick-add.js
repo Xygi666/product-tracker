@@ -1,5 +1,15 @@
 class QuickAdd {
   constructor() {
+    this.select = null;
+    this.qty = null;
+    this.amountEl = null;
+    this.presetsEl = null;
+    this.addBtn = null;
+    this.addMoreBtn = null;
+    this.init();
+  }
+
+  init() {
     this.select = document.getElementById('qa-product-select');
     this.qty = document.getElementById('qa-quantity-input');
     this.amountEl = document.getElementById('qa-amount');
@@ -7,93 +17,59 @@ class QuickAdd {
     this.addBtn = document.getElementById('qa-add-btn');
     this.addMoreBtn = document.getElementById('qa-add-more-btn');
 
-    this.init();
-  }
-
-  init() {
     this.loadProducts();
     this.loadPresets();
     this.bindEvents();
+    this.restoreFromParams();
+  }
+
+  bindEvents() {
+    if (this.select) {
+      this.select.addEventListener('change', () => this.updateAmount());
+    }
+    if (this.qty) {
+      this.qty.addEventListener('input', Utils.debounce(() => this.updateAmount(), 200));
+      this.qty.addEventListener('keypress', e => {
+        if (e.key === 'Enter') this.addRecord();
+      });
+    }
+    if (this.addBtn) {
+      this.addBtn.addEventListener('click', () => this.addRecord());
+    }
+    if (this.addMoreBtn) {
+      this.addMoreBtn.addEventListener('click', () => this.resetForm());
+    }
   }
 
   loadProducts() {
+    if (!this.select) return;
+
     const products = Storage.getProducts();
     this.select.innerHTML = '<option value="">Выберите продукт...</option>';
-    products.forEach(p => {
-      const option = document.createElement('option');
-      option.value = p.id;
-      option.textContent = (p.isFavorite ? '⭐ ' : '') + p.name + ` • ${Utils.formatCurrency(p.price)}`;
-      option.dataset.price = p.price;
-      option.dataset.name = p.name;
-      this.select.appendChild(option);
+
+    if (products.length === 0) {
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = 'Нет продуктов (добавьте в настройках)';
+      emptyOption.disabled = true;
+      this.select.appendChild(emptyOption);
+      return;
+    }
+
+    const favorites = products.filter(p => p.isFavorite).sort((a,b) => a.name.localeCompare(b.name));
+    const others = products.filter(p => !p.isFavorite).sort((a,b) => a.name.localeCompare(b.name));
+    
+    [...favorites, ...others].forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.isFavorite ? '⭐ ' : ''}${p.name} • ${Utils.formatCurrency(p.price)}`;
+      opt.dataset.price = p.price;
+      opt.dataset.name = p.name;
+      this.select.appendChild(opt);
     });
   }
 
   loadPresets() {
-    const presets = Storage.getQuantityPresets();
-    this.presetsEl.innerHTML = '';
-    presets.forEach(v => {
-      const btn = document.createElement('button');
-      btn.className = 'preset-btn';
-      btn.textContent = v;
-      btn.type = 'button';
-      btn.addEventListener('click', () => {
-        this.qty.value = v;
-        this.updateAmount();
-      });
-      this.presetsEl.appendChild(btn);
-    });
-  }
+    if (!this.presetsEl) return;
 
-  bindEvents() {
-    this.select.addEventListener('change', () => this.updateAmount());
-    this.qty.addEventListener('input', Utils.debounce(() => this.updateAmount(), 200));
-    this.addBtn.addEventListener('click', () => this.addRecord());
-    this.addMoreBtn.addEventListener('click', () => this.resetForm());
-    this.qty.addEventListener('keypress', e => {
-      if (e.key === 'Enter') this.addRecord();
-    });
-  }
-
-  updateAmount() {
-    const opt = this.select.options[this.select.selectedIndex];
-    const qty = parseFloat(this.qty.value);
-    if (opt && opt.dataset.price && qty > 0)
-      this.amountEl.textContent = Utils.formatCurrency(parseFloat(opt.dataset.price) * qty);
-    else this.amountEl.textContent = '0 ₽';
-  }
-
-  addRecord() {
-    if (!this.select.value) {
-      Utils.showToast('Выберите продукт', 'error');
-      this.select.focus();
-      return;
-    }
-    if (!Utils.isValidNumber(this.qty.value)) {
-      Utils.showToast('Введите корректное количество', 'error');
-      this.qty.focus();
-      return;
-    }
-    const productId = parseInt(this.select.value);
-    const productName = this.select.options[this.select.selectedIndex].dataset.name;
-    const price = parseFloat(this.select.options[this.select.selectedIndex].dataset.price);
-    const quantity = parseFloat(this.qty.value);
-    Storage.addRecord({ productId, productName, quantity, price, amount: price * quantity });
-    Utils.showToast(`Добавлено: ${productName}`, 'success');
-    this.addMoreBtn.style.display = 'inline-flex';
-    this.addBtn.textContent = 'Готово';
-    this.addBtn.onclick = () => (window.location.href = 'index.html');
-  }
-
-  resetForm() {
-    this.qty.value = '';
-    this.select.selectedIndex = 0;
-    this.updateAmount();
-    this.addMoreBtn.style.display = 'none';
-    this.addBtn.textContent = 'Добавить';
-    this.addBtn.onclick = () => this.addRecord();
-    this.select.focus();
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => new QuickAdd());
+    const presets = Storage.getQuantity
