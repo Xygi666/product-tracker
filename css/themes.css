@@ -1,52 +1,115 @@
-/* Light theme variables */
-
+/* Light theme (default) */
 :root {
   --background: #f9fafb;
   --surface: #ffffff;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --border: #e2e8f0;
-  --primary-color: #6366ff;
+  --primary-color: #6366f1;
   --primary-hover: #5750e0;
   --success-color: #10b981;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Dark theme overrides */
-
+/* Dark theme */
 [data-theme="dark"] {
   --background: #0f172a;
   --surface: #1e293b;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --border: #334155;
-  --primary-color: #6366ff;
+  --primary-color: #6366f1;
   --primary-hover: #5750e0;
   --success-color: #22c55e;
   --danger-color: #ef4444;
   --warning-color: #facc15;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --shadow: none;
+}
+
+/* Theme transition */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 body {
   background: var(--background);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
-
-/* Elements styling adapts automatically via CSS variables */
 
 .app-container {
   background: var(--surface);
-  box-shadow: var(--shadow);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: var(--shadow-lg);
 }
 
-/* similarly for all other components */
+/* Dark theme specific adjustments */
+[data-theme="dark"] .app-header {
+  background: var(--surface);
+  border-bottom-color: var(--border);
+}
 
+[data-theme="dark"] .stats-card.sales-card {
+  background: linear-gradient(135deg, var(--success-color), #16a34a);
+}
+
+[data-theme="dark"] .stats-card.production-card {
+  background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-select {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-select:focus {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .record-item,
+[data-theme="dark"] .product-item {
+  background: var(--background);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .search-results {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .search-result-item:hover,
+[data-theme="dark"] .search-result-item.selected {
+  background: var(--background);
+}
+
+[data-theme="dark"] .modal {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .preset-btn {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .preset-btn:hover,
+[data-theme="dark"] .preset-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Theme toggle icon */
+#theme-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+[data-theme="dark"] #theme-toggle svg {
+  transform: rotate(180deg);
+}
