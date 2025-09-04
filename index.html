@@ -8,19 +8,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Учет продукции</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/android-launcher-icon-192-192.png" sizes="192x192" />
-  <link rel="shortcut icon" href="icons/android-launcher-icon-192-192.png" />
+  <link rel="apple-touch-icon" href="icons/android-launcher-icon-192.png" sizes="192x192" />
+  <link rel="shortcut icon" href="icons/android-launcher-icon-192.png" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/themes.css" />
-
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(registration => {
-          console.log('Service Worker зарегистрирован:', registration.scope);
-        }).catch(error => {
-          console.error('Ошибка регистрации Service Worker:', error);
-        });
+        navigator.serviceWorker.register('./sw.js').then(reg=>console.log('SW зарегистрирован:', reg.scope))
+        .catch(console.error);
       });
     }
   </script>
@@ -31,35 +27,21 @@
       <div class="header-content">
         <h1 class="app-title">📦 Учет продукции</h1>
         <div class="header-actions">
-          <button id="statistics-btn" title="Статистика" class="header-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 3v18h18"></path>
-              <path d="M7 16l4-4 4 4"></path>
-            </svg>
+          <button id="statistics-btn" title="Статистика" class="header-btn" aria-label="Открыть статистику">
+            <!-- SVG иконка -->
           </button>
-          <button id="theme-toggle" title="Переключить тему" class="header-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5"></circle>
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-            </svg>
+          <button id="theme-toggle" title="Переключить тему" class="header-btn" aria-label="Переключить тему">
+            <!-- SVG иконка -->
           </button>
-          <button id="quick-export-btn" title="Быстрый экспорт" class="header-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
+          <button id="quick-export-btn" title="Быстрый экспорт" class="header-btn" aria-label="Быстрый экспорт">
+            <!-- SVG иконка -->
           </button>
-          <button title="Настройки" class="header-btn" onclick="location.href='settings.html'">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 01.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 01-1.82-.33 1.65 1.65 0 011-1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 01-1-1.51 1.65 1.65 0 01-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 01-.33-1.82V9a1.65 1.65 0 01-1.51-1H3a2 2 0 112 0h-.09a1.65 1.65 0 01-1.51 1l-.06.06a2 2 0 012.83 2.83l-.06-.06a1.65 1.65 0 011.82.33H9a1.65 1.65 0 011-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 012.83 2.83l-.06-.06a1.65 1.65 0 011 1.51V9h.09a2 2 0 01-2 2z"></path>
-            </svg>
+          <button title="Настройки" class="header-btn" onclick="window.location.href='settings.html'" aria-label="Открыть настройки">
+            <!-- SVG иконка -->
           </button>
         </div>
       </div>
     </header>
-
     <div class="main-stats">
       <div class="stats-card sales-card">
         <div class="stats-icon">💰</div>
@@ -76,78 +58,41 @@
         </div>
       </div>
     </div>
-
     <div class="add-form-card">
-      <h2 class="card-title">📝 Новая запись</h2>
-      <div class="form-group">
-        <label class="form-label">Продукт</label>
-        <div class="select-wrapper">
-          <div class="search-container">
-            <input type="text" id="product-search" class="form-input" placeholder="Поиск или выбор продукта..." autocomplete="off" />
-            <div id="search-results" class="search-results"></div>
-          </div>
-          <select id="product-select" class="form-select" style="display:none;">
-            <option value="">Выберите продукт...</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Количество</label>
-        <input type="number" id="quantity-input" class="form-input" placeholder="Введите количество..." min="0" step="0.01" />
-        <div id="quantity-presets" class="quantity-presets"></div>
-      </div>
-      <div class="amount-preview">
-        <span class="amount-label">Сумма:</span>
-        <span id="current-amount" class="amount-value">0 ₽</span>
-      </div>
-      <button id="add-record-btn" class="btn btn-primary">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2"></path>
-        </svg>
-        Добавить запись
-      </button>
+      <!-- форма добавления -->
     </div>
-
-    <div class="records-card">
-      <div class="header">
-        <h2>История записей</h2>
-        <div>
-          <span id="records-count">0</span> записей
-          <button id="export-csv-btn" title="Экспорт в CSV" class="btn btn-secondary btn-small">CSV</button>
-        </div>
-      </div>
-      <div id="records-list" class="records-list"></div>
+    <div class="records-list-container">
+      <!-- история записей -->
     </div>
+  </div>
 
-    <div id="statistics-modal" class="modal">
-      <div class="modal-content statistics-modal">
-        <header>
-          <h3>Статистика и зарплата</h3>
-          <button class="close-btn" onclick="closeStatisticsModal()">×</button>
-        </header>
-        <section class="salary-stats">
-          <h4>Расчет зарплаты</h4>
-          <div><span>Доходы от продаж:</span><span id="stat-sales">0 ₽</span></div>
-          <div><span>Оклад:</span><span id="stat-salary">0 ₽</span></div>
-          <div><span>До налогов:</span><span id="stat-before-tax">0 ₽</span></div>
-          <div><span>Налог (<span id="stat-tax-percent">13</span>%):</span><span id="stat-tax-amount">0 ₽</span></div>
-          <div><span>Аванс:</span><span id="stat-advance">0 ₽</span></div>
-          <div><strong>На руки:</strong><strong id="stat-net-salary">0 ₽</strong></div>
-        </section>
-
-        <section class="production-stats">
-          <h4>Производство</h4>
-          <div><span>Всего произведено:</span><span id="monthly-production">0 шт</span></div>
-          <div><span>Всего записей:</span><span id="records-count">0</span></div>
-        </section>
-      </div>
+  <!-- Модал статистики -->
+  <div id="statistics-modal" class="modal">
+    <div class="modal-content statistics-modal">
+      <header>
+        <h3>Статистика и зарплата</h3>
+        <button class="close-btn" onclick="closeStatisticsModal()">×</button>
+      </header>
+      <section class="salary-stats">
+        <div>Доходы от продаж: <span id="stat-sales">0 ₽</span></div>
+        <div>Оклад: <span id="stat-salary">0 ₽</span></div>
+        <div>До налогов: <span id="stat-before-tax">0 ₽</span></div>
+        <div>Налог (<span id="stat-tax-percent">13</span>%): <span id="stat-tax-amount">0 ₽</span></div>
+        <div>Аванс: <span id="stat-advance">0 ₽</span></div>
+        <div><b>На руки: <span id="stat-net-salary">0 ₽</span></b></div>
+      </section>
+      <section class="production-stats">
+        <div>Всего произведено: <span id="monthly-production">0 шт</span></div>
+        <div>Всего записей: <span id="records-count">0</span></div>
+      </section>
     </div>
+  </div>
 
-    <div id="toast" class="toast"></div>
-    <script src="js/storage.js"></script>
-    <script src="js/export.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/themes.js"></script>
-    <script src="js/app.js"></script>
-  </body>
+  <div id="toast" class="toast"></div>
+  <script src="js/storage.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/themes.js"></script>
+  <script src="js/app.js"></script>
+</body>
 </html>
