@@ -16,6 +16,21 @@
     <!-- Стили -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/themes.css">
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('Service Worker зарегистрирован:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Ошибка регистрации Service Worker:', error);
+                    });
+            });
+        }
+    </script>
 </head>
 <body data-theme="light">
     <div class="app-container">
@@ -24,6 +39,12 @@
             <div class="header-content">
                 <h1 class="app-title">📦 Учет продукции</h1>
                 <div class="header-actions">
+                    <button id="statistics-btn" class="header-btn" title="Статистика">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v18h18"></path>
+                            <path d="M7 16l4-4 4 4 6-6"></path>
+                        </svg>
+                    </button>
                     <button id="theme-toggle" class="header-btn" title="Переключить тему">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="5"></circle>
@@ -47,12 +68,24 @@
             </div>
         </header>
 
-        <!-- Карточка месячной прибыли -->
-        <div class="stats-card">
-            <div class="stats-icon">💰</div>
-            <div class="stats-content">
-                <div class="stats-label">Заработано за месяц</div>
-                <div class="stats-amount" id="monthly-total">0 ₽</div>
+        <!-- Главная статистика -->
+        <div class="main-stats">
+            <!-- Доходы -->
+            <div class="stats-card sales-card">
+                <div class="stats-icon">💰</div>
+                <div class="stats-content">
+                    <div class="stats-label">Доходы за месяц</div>
+                    <div class="stats-amount" id="monthly-sales">0 ₽</div>
+                </div>
+            </div>
+
+            <!-- Продукция -->
+            <div class="stats-card production-card">
+                <div class="stats-icon">📦</div>
+                <div class="stats-content">
+                    <div class="stats-label">Произведено за месяц</div>
+                    <div class="stats-amount" id="monthly-production">0 шт</div>
+                </div>
             </div>
         </div>
 
@@ -63,7 +96,6 @@
             <div class="form-group">
                 <label class="form-label">Продукт</label>
                 <div class="select-wrapper">
-                    <!-- Поиск продуктов -->
                     <div class="search-container">
                         <input type="text" id="product-search" class="form-input" 
                                placeholder="Поиск или выбор продукта..." autocomplete="off">
@@ -80,10 +112,7 @@
                 <input type="number" id="quantity-input" class="form-input" 
                        placeholder="Введите количество..." min="0" step="0.01">
                 
-                <!-- Пресеты количества -->
-                <div class="quantity-presets" id="quantity-presets">
-                    <!-- Пресеты добавляются динамически -->
-                </div>
+                <div class="quantity-presets" id="quantity-presets"></div>
             </div>
 
             <div class="amount-preview">
@@ -111,6 +140,73 @@
                 </div>
             </div>
             <div id="records-list" class="records-list"></div>
+        </div>
+    </div>
+
+    <!-- Модал статистики -->
+    <div id="statistics-modal" class="modal">
+        <div class="modal-content statistics-modal">
+            <div class="modal-header">
+                <h3>📊 Подробная статистика</h3>
+                <button class="close-btn" onclick="closeStatisticsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Зарплатная статистика -->
+                <div class="salary-stats">
+                    <h4>💵 Расчет зарплаты</h4>
+                    <div class="salary-breakdown">
+                        <div class="salary-item">
+                            <span>Доходы от продаж:</span>
+                            <span id="stat-sales">0 ₽</span>
+                        </div>
+                        <div class="salary-item">
+                            <span>Оклад:</span>
+                            <span id="stat-salary">0 ₽</span>
+                        </div>
+                        <div class="salary-item">
+                            <span>Итого до налогов:</span>
+                            <span id="stat-before-tax">0 ₽</span>
+                        </div>
+                        <div class="salary-item tax">
+                            <span>Налог (<span id="stat-tax-percent">13</span>%):</span>
+                            <span id="stat-tax-amount">0 ₽</span>
+                        </div>
+                        <div class="salary-item advance">
+                            <span>Аванс:</span>
+                            <span id="stat-advance">0 ₽</span>
+                        </div>
+                        <div class="salary-item total">
+                            <span>К доплате:</span>
+                            <span id="stat-net-salary">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Производственная статистика -->
+                <div class="production-stats">
+                    <h4>📦 Производство</h4>
+                    <div class="production-breakdown">
+                        <div class="production-item">
+                            <span>Всего произведено:</span>
+                            <span id="stat-total-production">0 шт</span>
+                        </div>
+                        <div class="production-item">
+                            <span>Количество записей:</span>
+                            <span id="stat-records-count">0</span>
+                        </div>
+                        <div class="production-item">
+                            <span>Средняя прибыль за запись:</span>
+                            <span id="stat-avg-per-record">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Топ продукты -->
+                <div class="top-products-stats">
+                    <h4>🏆 Топ продукты</h4>
+                    <div id="stat-top-products" class="top-products-list"></div>
+                </div>
+            </div>
         </div>
     </div>
 
