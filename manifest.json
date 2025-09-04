@@ -1,64 +1,17 @@
 {
   "name": "Учет продукции",
   "short_name": "Продукция",
-  "description": "Приложение для учета готовой продукции и расчета прибыли",
-  "lang": "ru",
   "start_url": "./",
-  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "theme_color": "#6366f1",
   "background_color": "#ffffff",
-  "categories": ["productivity", "business"],
   "icons": [
-    {
-      "src": "icons/android-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/android-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/android-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "icons/android-icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/android-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    {
-      "name": "Быстрое добавление",
-      "short_name": "Быстрое",
-      "description": "Мгновенный ввод продукции",
-      "url": "quick-add.html",
-      "icons": [{
-        "src": "icons/android-icon-192.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      }]
-    },
-    {
-      "name": "Добавить продукт",
-      "short_name": "Продукт",
-      "description": "Переход к добавлению продукта",
-      "url": "settings.html#add-product"
-    },
-    {
-      "name": "Статистика",
-      "short_name": "Статистика",
-      "description": "Просмотр статистики и зарплаты",
-      "url": "#statistics"
-    },
-    {
-      "name": "Избранные",
-      "short_name": "Избранные",
-      "description": "Показ избранных продуктов",
-      "url": "settings.html#favorites"
-    }
+    { "name": "Быстрое добавление", "url": "quick-add.html", "short_name":"Быстрое" },
+    { "name": "Добавить продукт", "url": "settings.html#add-product", "short_name":"Продукт" },
+    { "name": "Статистика", "url": "#statistics", "short_name":"Статистика" }
   ]
 }
