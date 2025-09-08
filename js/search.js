@@ -2,7 +2,6 @@ class SearchManager {
   constructor() {
     this.searchInput = null;
     this.searchResults = null;
-    this.productSelect = null;
     this.isSearchMode = false;
     this.selectedProduct = null;
     this.searchTimeout = null;
@@ -13,9 +12,8 @@ class SearchManager {
   init() {
     this.searchInput = document.getElementById('product-search');
     this.searchResults = document.getElementById('search-results');
-    this.productSelect = document.getElementById('product-select');
 
-    if (!this.searchInput || !this.searchResults || !this.productSelect) {
+    if (!this.searchInput || !this.searchResults) {
       console.warn('SearchManager: не найдены необходимые элементы');
       return;
     }
@@ -114,7 +112,7 @@ class SearchManager {
     
     let productName = product.name;
     if (query) {
-      const regex = new RegExp(`(${query})`, 'gi');
+      const regex = new RegExp(`(${this.escapeRegExp(query)})`, 'gi');
       productName = productName.replace(regex, '<mark>$1</mark>');
     }
     
@@ -136,6 +134,10 @@ class SearchManager {
     });
     
     return div;
+  }
+
+  escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   showNoResults(query) {
@@ -163,14 +165,10 @@ class SearchManager {
     this.searchInput.value = product.name;
     this.hideResults();
     
-    this.productSelect.innerHTML = `<option value="${product.id}" selected>${product.name}</option>`;
-    this.productSelect.value = product.id;
-    
-    const selectedOption = this.productSelect.options[0];
-    selectedOption.dataset.price = product.price;
-    selectedOption.dataset.name = product.name;
-    
-    this.productSelect.dispatchEvent(new Event('change'));
+    // Обновляем сумму через app
+    if (window.app) {
+      window.app.updateCurrentAmount();
+    }
     
     const quantityInput = document.getElementById('quantity-input');
     if (quantityInput) {
@@ -241,10 +239,12 @@ class SearchManager {
 
   showResults() {
     this.searchResults.classList.add('show');
+    this.searchResults.style.display = 'block';
   }
 
   hideResults() {
     this.searchResults.classList.remove('show');
+    this.searchResults.style.display = 'none';
     this.clearSelection();
   }
 
@@ -272,4 +272,5 @@ let searchManager;
 
 document.addEventListener('DOMContentLoaded', () => {
   searchManager = new SearchManager();
+  window.searchManager = searchManager;
 });
