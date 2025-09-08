@@ -51,10 +51,10 @@ class ExportManager {
       csvRows.push('');
       csvRows.push(`"Итого за месяц:",,,,,${total}`);
 
-      const csvContent = csvRows.join('\n');
+      const csvContent = '\uFEFF' + csvRows.join('\n');
       
       const fileName = `отчет-продукции-${new Date().toISOString().split('T')[0]}.csv`;
-      this.downloadCSV(csvContent, fileName);
+      this.downloadFile(csvContent, fileName, 'text/csv;charset=utf-8');
       
       Utils.showToast('CSV файл скачан', 'success');
       return csvContent;
@@ -121,7 +121,7 @@ class ExportManager {
       `;
 
       const fileName = `отчет-продукции-${new Date().toISOString().split('T')[0]}.xls`;
-      this.downloadExcel(html, fileName);
+      this.downloadFile(html, fileName, 'application/vnd.ms-excel');
       
       Utils.showToast('Excel файл скачан', 'success');
       
@@ -234,20 +234,8 @@ class ExportManager {
     }
   }
 
-  downloadCSV(content, fileName) {
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + content], { 
-      type: 'text/csv;charset=utf-8;' 
-    });
-    
-    Utils.downloadFile(blob, fileName, 'text/csv');
-  }
-
-  downloadExcel(htmlContent, fileName) {
-    const blob = new Blob([htmlContent], { 
-      type: 'application/vnd.ms-excel;charset=utf-8;' 
-    });
-    
+  downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -256,21 +244,6 @@ class ExportManager {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  exportBackup() {
-    try {
-      const data = Storage.exportData();
-      const jsonString = JSON.stringify(data, null, 2);
-      const fileName = `product-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
-      
-      Utils.downloadFile(jsonString, fileName, 'application/json');
-      Utils.showToast('Резервная копия создана', 'success');
-      
-    } catch (error) {
-      console.error('Ошибка создания резервной копии:', error);
-      Utils.showToast('Ошибка при создании резервной копии', 'error');
-    }
   }
 }
 
@@ -297,7 +270,3 @@ function shareReport() {
     window.app.closeQuickExport();
   }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const exportManager = new ExportManager();
-});
