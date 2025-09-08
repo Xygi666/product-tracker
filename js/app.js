@@ -20,12 +20,7 @@ class ProductTracker {
   bindEvents() {
     const addRecordBtn = document.getElementById('add-record-btn');
     const quantityInput = document.getElementById('quantity-input');
-    const productSelect = document.getElementById('product-select');
 
-    if (productSelect) {
-      productSelect.addEventListener('change', () => this.updateCurrentAmount());
-    }
-    
     if (quantityInput) {
       quantityInput.addEventListener('input', Utils.debounce(() => this.updateCurrentAmount(), 300));
       quantityInput.addEventListener('keypress', (e) => {
@@ -41,12 +36,6 @@ class ProductTracker {
 
     this.bindStatisticsEvents();
     this.bindQuickExportEvents();
-
-    document.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && e.target.id !== 'quantity-input') {
-        e.preventDefault();
-      }
-    });
   }
 
   bindStatisticsEvents() {
@@ -79,12 +68,8 @@ class ProductTracker {
     const exportCsvBtn = document.getElementById('export-csv-btn');
     if (exportCsvBtn) {
       exportCsvBtn.addEventListener('click', () => {
-        if (typeof ExportManager !== 'undefined') {
-          const exportManager = new ExportManager();
-          exportManager.exportToCSV();
-        } else {
-          Utils.showToast('Модуль экспорта не загружен', 'error');
-        }
+        const exportManager = new ExportManager();
+        exportManager.exportToCSV();
       });
     }
 
@@ -120,39 +105,13 @@ class ProductTracker {
 
   loadProducts() {
     const products = Storage.getProducts();
-    const select = document.getElementById('product-select');
     
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Выберите продукт...</option>';
-
-    if (products.length === 0) {
-      const emptyOption = document.createElement('option');
-      emptyOption.value = '';
-      emptyOption.textContent = 'Нет продуктов (добавьте в настройках)';
-      emptyOption.disabled = true;
-      select.appendChild(emptyOption);
-      return;
+    // Обновляем интерфейс поиска через глобальную переменную searchManager
+    if (window.searchManager) {
+      window.searchManager.refreshResults();
     }
-
-    const favorites = products.filter(p => p.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
-    const regular = products.filter(p => !p.isFavorite).sort((a, b) => a.name.localeCompare(b.name));
-    const sortedProducts = [...favorites, ...regular];
-
-    sortedProducts.forEach(product => {
-      const option = document.createElement('option');
-      option.value = product.id;
-      option.textContent = `${product.isFavorite ? '⭐ ' : ''}${product.name} • ${Utils.formatCurrency(product.price)}`;
-      option.dataset.price = product.price;
-      option.dataset.name = product.name;
-      select.appendChild(option);
-    });
-
+    
     this.updateCurrentAmount();
-
-    if (typeof searchManager !== 'undefined') {
-      searchManager.refreshResults();
-    }
   }
 
   loadQuantityPresets() {
@@ -207,23 +166,18 @@ class ProductTracker {
   }
 
   updateCurrentAmount() {
-    const select = document.getElementById('product-select');
     const quantityInput = document.getElementById('quantity-input');
     const currentAmount = document.getElementById('current-amount');
     
-    if (!select || !quantityInput || !currentAmount) return;
+    if (!quantityInput || !currentAmount) return;
 
-    let selectedOption = null;
     let price = 0;
+    let selectedProduct = null;
 
-    if (typeof searchManager !== 'undefined' && searchManager.getSelectedProduct()) {
-      const selectedProduct = searchManager.getSelectedProduct();
+    // Получаем выбранный продукт из searchManager
+    if (window.searchManager && window.searchManager.getSelectedProduct()) {
+      selectedProduct = window.searchManager.getSelectedProduct();
       price = selectedProduct.price;
-    } else {
-      selectedOption = select.options[select.selectedIndex];
-      if (selectedOption && selectedOption.dataset.price) {
-        price = parseFloat(selectedOption.dataset.price);
-      }
     }
 
     const quantity = parseFloat(quantityInput.value) || 0;
@@ -241,41 +195,24 @@ class ProductTracker {
   async addRecord() {
     if (this.isLoading) return;
 
-    const select = document.getElementById('product-select');
     const quantityInput = document.getElementById('quantity-input');
     const addButton = document.getElementById('add-record-btn');
 
-    if (!select || !quantityInput || !addButton) return;
+    if (!quantityInput || !addButton) return;
 
     let selectedProduct = null;
-    let productId = null;
-    let productName = '';
-    let price = 0;
 
-    if (typeof searchManager !== 'undefined' && searchManager.getSelectedProduct()) {
-      selectedProduct = searchManager.getSelectedProduct();
-      productId = selectedProduct.id;
-      productName = selectedProduct.name;
-      price = selectedProduct.price;
-    } else {
-      const selectedOption = select.options[select.selectedIndex];
-      if (selectedOption && selectedOption.value) {
-        productId = parseInt(selectedOption.value);
-        productName = selectedOption.dataset.name;
-        price = parseFloat(selectedOption.dataset.price);
-      }
+    // Получаем выбранный продукт из searchManager
+    if (window.searchManager && window.searchManager.getSelectedProduct()) {
+      selectedProduct = window.searchManager.getSelectedProduct();
     }
 
     const quantity = quantityInput.value.trim();
 
-    if (!productId) {
+    if (!selectedProduct) {
       Utils.showToast('Выберите продукт', 'error');
-      if (typeof searchManager !== 'undefined') {
-        const searchInput = document.getElementById('product-search');
-        if (searchInput) searchInput.focus();
-      } else {
-        select.focus();
-      }
+      const searchInput = document.getElementById('product-search');
+      if (searchInput) searchInput.focus();
       return;
     }
 
@@ -290,11 +227,11 @@ class ProductTracker {
 
     try {
       const record = {
-        productId: productId,
-        productName: productName,
+        productId: selectedProduct.id,
+        productName: selectedProduct.name,
         quantity: parseFloat(quantity),
-        price: price,
-        amount: parseFloat(quantity) * price
+        price: selectedProduct.price,
+        amount: parseFloat(quantity) * selectedProduct.price
       };
 
       Storage.addRecord(record);
@@ -305,22 +242,16 @@ class ProductTracker {
       quantityInput.value = '';
       this.updateCurrentAmount();
 
-      if (typeof searchManager !== 'undefined') {
-        searchManager.clear();
-      } else {
-        select.selectedIndex = 0;
+      if (window.searchManager) {
+        window.searchManager.clear();
       }
 
       const activePresets = document.querySelectorAll('.preset-btn.active');
       activePresets.forEach(btn => btn.classList.remove('active'));
 
       setTimeout(() => {
-        if (typeof searchManager !== 'undefined') {
-          const searchInput = document.getElementById('product-search');
-          if (searchInput) searchInput.focus();
-        } else {
-          select.focus();
-        }
+        const searchInput = document.getElementById('product-search');
+        if (searchInput) searchInput.focus();
       }, 100);
 
       Utils.showToast(`Добавлена запись: ${record.productName}`, 'success');
@@ -397,16 +328,10 @@ class ProductTracker {
     const records = Storage.getCurrentMonthRecords();
     
     const totalSales = records.reduce((sum, record) => sum + record.amount, 0);
-    const totalProduction = records.reduce((sum, record) => sum + record.quantity, 0);
     
     const monthlySalesElement = document.getElementById('monthly-sales');
     if (monthlySalesElement) {
       monthlySalesElement.textContent = Utils.formatCurrency(totalSales);
-    }
-
-    const monthlyProductionElement = document.getElementById('monthly-production');
-    if (monthlyProductionElement) {
-      monthlyProductionElement.textContent = `${totalProduction} шт`;
     }
   }
 
@@ -423,38 +348,45 @@ class ProductTracker {
     document.getElementById('stat-advance').textContent = Utils.formatCurrency(salaryData.advancePayment);
     document.getElementById('stat-net-salary').textContent = Utils.formatCurrency(salaryData.netSalary);
 
-    const productionStats = Storage.getProductionStats();
-    document.getElementById('stat-total-production').textContent = `${productionStats.totalProduction} шт`;
-    document.getElementById('stat-records-count').textContent = productionStats.recordsCount;
-    document.getElementById('stat-avg-per-record').textContent = Utils.formatCurrency(productionStats.avgPerRecord);
-
-    this.renderTopProducts(productionStats.topProducts);
+    this.renderProductStats();
 
     modal.classList.add('show');
   }
 
-  renderTopProducts(topProducts) {
-    const container = document.getElementById('stat-top-products');
+  renderProductStats() {
+    const container = document.getElementById('stat-products');
     if (!container) return;
 
-    if (topProducts.length === 0) {
+    const records = Storage.getCurrentMonthRecords();
+    
+    if (records.length === 0) {
       container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Нет данных</p>';
       return;
     }
 
+    // Группируем по продуктам
+    const productStats = {};
+    records.forEach(record => {
+      if (!productStats[record.productName]) {
+        productStats[record.productName] = {
+          name: record.productName,
+          quantity: 0,
+          amount: 0
+        };
+      }
+      productStats[record.productName].quantity += record.quantity;
+      productStats[record.productName].amount += record.amount;
+    });
+
     container.innerHTML = '';
-    topProducts.forEach((product, index) => {
+    Object.values(productStats).forEach(product => {
       const div = document.createElement('div');
-      div.className = 'top-product-item';
+      div.className = 'product-stat-item';
       
       div.innerHTML = `
-        <div class="top-product-info">
-          <div class="top-product-rank">${index + 1}</div>
-          <div class="top-product-name">${product.name}</div>
-        </div>
-        <div class="top-product-stats">
-          <div class="top-product-amount">${Utils.formatCurrency(product.amount)}</div>
-          <div class="top-product-quantity">${product.quantity} шт (${product.count} записей)</div>
+        <div class="product-stat-name">${product.name}</div>
+        <div class="product-stat-details">
+          ${product.quantity} шт. • ${Utils.formatCurrency(product.amount)}
         </div>
       `;
       
