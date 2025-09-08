@@ -263,15 +263,10 @@ class SettingsManager {
       </div>
       <div class="product-actions">
         <button class="edit-btn" onclick="settings.editProduct(${product.id})" title="Редактировать продукт">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25a1.75 1.75 0 0 1 .445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064L11.189 6.25Z"/>
-            <path d="M8.25 2.331a.75.75 0 0 1 .75-.75c.414 0 .814.057 1.2.166a.75.75 0 1 1-.4 1.448 4.25 4.25 0 0 0-.8-.114.75.75 0 0 1-.75-.75Z"/>
-          </svg>
+          ✏️
         </button>
         <button class="delete-btn" onclick="settings.deleteProduct(${product.id})" title="Удалить продукт">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M12.854 4.854a.5.5 0 0 0-.708-.708L8 8.293 3.854 4.146a.5.5 0 1 0-.708.708L7.293 9l-4.147 4.146a.5.5 0 0 0 .708.708L8 9.707l4.146 4.147a.5.5 0 0 0 .708-.708L8.707 9l4.147-4.146z"/>
-          </svg>
+          ❌
         </button>
       </div>
     `;
@@ -461,4 +456,183 @@ class SettingsManager {
       return;
     }
 
-    const existingPresets = Storage.getQuant
+    const existingPresets = Storage.getQuantityPresets();
+    if (existingPresets.includes(value)) {
+      Utils.showToast('Такой пресет уже существует', 'warning');
+      input.focus();
+      input.select();
+      return;
+    }
+
+    try {
+      Storage.addQuantityPreset(value);
+      this.loadQuantityPresets();
+      input.value = '';
+      input.focus();
+      Utils.showToast(`Пресет ${value} добавлен`, 'success');
+    } catch (error) {
+      console.error('Ошибка при добавлении пресета:', error);
+      Utils.showToast('Ошибка при добавлении пресета', 'error');
+    }
+  }
+
+  deleteQuantityPreset(preset) {
+    if (!confirm(`Удалить пресет ${preset}?`)) return;
+
+    try {
+      Storage.removeQuantityPreset(preset);
+      this.loadQuantityPresets();
+      Utils.showToast(`Пресет ${preset} удален`, 'success');
+    } catch (error) {
+      console.error('Ошибка при удалении пресета:', error);
+      Utils.showToast('Ошибка при удалении пресета', 'error');
+    }
+  }
+
+  loadSalarySettings() {
+    const salarySettings = Storage.getSalarySettings();
+    
+    const baseSalaryInput = document.getElementById('base-salary');
+    const advancePaymentInput = document.getElementById('advance-payment');
+    const taxRateInput = document.getElementById('tax-rate');
+
+    if (baseSalaryInput) baseSalaryInput.value = salarySettings.baseSalary;
+    if (advancePaymentInput) advancePaymentInput.value = salarySettings.advancePayment;
+    if (taxRateInput) taxRateInput.value = salarySettings.taxRate;
+  }
+
+  async saveSalarySettings() {
+    const baseSalaryInput = document.getElementById('base-salary');
+    const advancePaymentInput = document.getElementById('advance-payment');
+    const taxRateInput = document.getElementById('tax-rate');
+    const saveButton = document.getElementById('save-salary-settings-btn');
+
+    if (!baseSalaryInput || !advancePaymentInput || !taxRateInput) return;
+
+    const baseSalary = parseFloat(baseSalaryInput.value) || 0;
+    const advancePayment = parseFloat(advancePaymentInput.value) || 0;
+    const taxRate = parseFloat(taxRateInput.value) || 13;
+
+    if (taxRate < 0 || taxRate > 100) {
+      Utils.showToast('Налог должен быть от 0% до 100%', 'error');
+      taxRateInput.focus();
+      return;
+    }
+
+    if (advancePayment < 0) {
+      Utils.showToast('Аванс не может быть отрицательным', 'error');
+      advancePaymentInput.focus();
+      return;
+    }
+
+    try {
+      Storage.saveSalarySettings({
+        baseSalary,
+        advancePayment,
+        taxRate
+      });
+
+      Utils.showToast('Настройки зарплаты сохранены', 'success');
+
+      if (saveButton) {
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = '✅ Сохранено';
+        saveButton.disabled = true;
+        
+        setTimeout(() => {
+          saveButton.innerHTML = originalText;
+          saveButton.disabled = false;
+        }, 2000);
+      }
+
+    } catch (error) {
+      console.error('Ошибка сохранения настроек зарплаты:', error);
+      Utils.showToast('Ошибка при сохранении настроек', 'error');
+    }
+  }
+
+  exportData() {
+    try {
+      const data = Storage.exportData();
+      const jsonString = JSON.stringify(data, null, 2);
+      const fileName = `product-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+      
+      Utils.downloadFile(jsonString, fileName, 'application/json');
+      Utils.showToast('Резервная копия создана', 'success');
+      
+    } catch (error) {
+      console.error('Ошибка при экспорте:', error);
+      Utils.showToast('Ошибка при экспорте данных', 'error');
+    }
+  }
+
+  exportToExcel() {
+    const exportManager = new ExportManager();
+    exportManager.exportToExcel();
+  }
+
+  clearAllRecords() {
+    const records = Storage.getRecords();
+    if (records.length === 0) {
+      Utils.showToast('Нет записей для удаления', 'warning');
+      return;
+    }
+
+    const confirmMessage = `Удалить все записи (${records.length} шт.)?`;
+    if (!confirm(confirmMessage)) return;
+
+    try {
+      Storage.clearAllRecords();
+      Utils.showToast('Все записи удалены', 'success');
+    } catch (error) {
+      console.error('Ошибка при очистке записей:', error);
+      Utils.showToast('Ошибка при удалении записей', 'error');
+    }
+  }
+
+  getEmptyState(icon, title, subtitle) {
+    return `
+      <div class="empty-state">
+        <div class="empty-state-icon">${icon}</div>
+        <div class="empty-state-text">${title}</div>
+        <div class="empty-state-subtext">${subtitle}</div>
+      </div>
+    `;
+  }
+
+  setLoading(loading, button) {
+    this.isLoading = loading;
+    
+    if (button) {
+      button.disabled = loading;
+      if (loading) {
+        button.classList.add('loading');
+        const originalText = button.textContent;
+        button.innerHTML = 'Сохранение...';
+      } else {
+        button.classList.remove('loading');
+        button.innerHTML = button.id === 'add-product-btn' ? 'Добавить продукт' : 'Сохранить';
+      }
+    }
+    
+    this.validateProductForm();
+  }
+}
+
+window.closeEditModal = function() {
+  if (window.settings) {
+    window.settings.closeEditModal();
+  }
+};
+
+let settings;
+
+document.addEventListener('DOMContentLoaded', () => {
+  settings = new SettingsManager();
+  window.settings = settings;
+
+  if (typeof themeManager !== 'undefined') {
+    const savedTheme = Storage.getSetting('theme', 'light');
+    document.body.setAttribute('data-theme', savedTheme);
+  }
+});
